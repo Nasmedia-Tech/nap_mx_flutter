@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class NapMxFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     EventChannel.StreamHandler, ActivityAware {
 
-    companion object { private const val PLUGIN_VERSION = "0.1.0" }
+    companion object { private const val PLUGIN_VERSION = "0.1.1" }
 
     private lateinit var applicationContext: Context
     private lateinit var methods: MethodChannel
