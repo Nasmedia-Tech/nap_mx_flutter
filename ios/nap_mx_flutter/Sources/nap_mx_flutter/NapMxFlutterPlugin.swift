@@ -686,7 +686,6 @@ private func activeViewController() -> UIViewController? {
   return controller
 }
 
-@MainActor
 private func loadNativeTemplate() -> AMMNativeAdView? {
   let nativeView = AMMNativeAdView()
   nativeView.backgroundColor = .systemBackground
