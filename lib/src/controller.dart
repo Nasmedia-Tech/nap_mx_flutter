@@ -34,6 +34,7 @@ final class NapMxFullscreenAdController {
   static int _sequence = 0;
   late final String _requestId;
   late final StreamSubscription<NapMxEvent> _subscription;
+
   /// Full-screen format owned by this request.
   final NapMxAdFormat format;
 
