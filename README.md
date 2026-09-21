@@ -8,7 +8,7 @@ Android와 iOS의 [nap mx SDK](https://napmx.github.io/)를 같은 타입 기반
 
 ## 문서 바로가기
 
-- 처음 연동하거나 운영 앱에 적용할 때는 [상세 연동 가이드](docs/integration-guide.md)를 순서대로 진행하세요.
+- 처음 연동하거나 운영 앱에 적용할 때는 [상세 연동 가이드](doc/integration-guide.md)를 순서대로 진행하세요.
 - 실행 가능한 전체 화면은 [Sample 앱](example/lib/main.dart)에서 확인할 수 있습니다.
 - 네이티브 SDK 원문과 최신 네트워크 요구사항은 [nap mx 공식 가이드](https://napmx.github.io/)를 기준으로 합니다.
 
