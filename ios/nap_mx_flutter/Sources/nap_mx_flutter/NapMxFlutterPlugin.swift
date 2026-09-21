@@ -205,6 +205,10 @@ public final class NapMxFlutterPlugin: NSObject, FlutterPlugin, FlutterStreamHan
 
 private final class NapMxFullscreenRequest: NSObject,
     AMMInterstitialDelegate, AMMVideoInterstitialDelegate, AMMRewardVideoDelegate {
+  /// How long a closed ad is kept alive so that a reward callback which the network
+  /// delivers after the close callback can still reach the app.
+  private static let rewardGrace: TimeInterval = 2
+
   let id: String
   let format: String
   let adUnitText: String
@@ -354,9 +358,16 @@ private final class NapMxFullscreenRequest: NSObject,
       ))
       showResult = nil
     }
+    state = "closed"
     emitBlock(event("closed"))
-    dispose(notify: false)
-    finishedBlock(id)
+    // The SDK defines no order between the reward and the close callback, and releasing the
+    // ad while a reward is still in flight loses that callback. Keep the native ad alive for
+    // a bounded window so a late reward still reaches the app.
+    DispatchQueue.main.asyncAfter(deadline: .now() + Self.rewardGrace) { [weak self] in
+      guard let self else { return }
+      self.dispose(notify: false)
+      self.finishedBlock(self.id)
+    }
   }
 
   private func failLoad(error: Error) {
@@ -442,8 +453,11 @@ private final class NapMxFullscreenRequest: NSObject,
   func onCloseRewardVideo() { didClose() }
   func onClickRewardVideo() { if !disposed { emitBlock(event("clicked")) } }
   func onRewardVideoComplete() { if !disposed { emitBlock(event("completed")) } }
+  /// Reward delivery is intentionally not gated on `disposed`: the reward can arrive after
+  /// the close callback, and the SDK notifies exactly once per impression, so the
+  /// `rewardSent` flag alone keeps it exactly-once.
   func onRewardVideoEarned(rewardInfo: RewardInfo) {
-    guard !rewardSent, !disposed else { return }
+    guard !rewardSent else { return }
     rewardSent = true
     var value = event("rewarded")
     value["reward"] = ["transactionId": rewardInfo.transactionId ?? ""]

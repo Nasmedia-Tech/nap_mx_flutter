@@ -3,7 +3,9 @@
 package com.nasmedia.nap_mx_flutter
 
 import android.app.Activity
+import android.app.Application
 import android.content.Context
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
@@ -21,6 +23,7 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.*
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
+import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -28,7 +31,15 @@ import java.util.concurrent.atomic.AtomicBoolean
 class NapMxFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     EventChannel.StreamHandler, ActivityAware {
 
-    companion object { private const val PLUGIN_VERSION = "0.1.1" }
+    companion object {
+        private const val PLUGIN_VERSION = "0.1.1"
+
+        /**
+         * How long a closed full-screen ad is kept alive so that a reward callback which
+         * the network delivers after the close callback can still reach the app.
+         */
+        private const val REWARD_GRACE_MS = 2_000L
+    }
 
     private lateinit var applicationContext: Context
     private lateinit var methods: MethodChannel
@@ -41,6 +52,29 @@ class NapMxFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private var mediation = emptyMap<String, Map<String, String>>()
     private val requests = ConcurrentHashMap<String, FullscreenRequest>()
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val adViews = Collections.newSetFromMap(
+        ConcurrentHashMap<NapMxPlatformAdView, Boolean>(),
+    )
+
+    /**
+     * Inline ad views must follow the host Activity's resumed/paused state. Flutter gives a
+     * plugin the Activity but not its lifecycle, so it is observed through the Application.
+     */
+    private val activityCallbacks = object : Application.ActivityLifecycleCallbacks {
+        override fun onActivityResumed(host: Activity) {
+            if (host === activity) adViews.forEach(NapMxPlatformAdView::onHostResume)
+        }
+
+        override fun onActivityPaused(host: Activity) {
+            if (host === activity) adViews.forEach(NapMxPlatformAdView::onHostPause)
+        }
+
+        override fun onActivityCreated(host: Activity, state: Bundle?) = Unit
+        override fun onActivityStarted(host: Activity) = Unit
+        override fun onActivityStopped(host: Activity) = Unit
+        override fun onActivitySaveInstanceState(host: Activity, state: Bundle) = Unit
+        override fun onActivityDestroyed(host: Activity) = Unit
+    }
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         applicationContext = binding.applicationContext
@@ -49,15 +83,18 @@ class NapMxFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         events = EventChannel(messenger, "nap_mx_flutter/events")
         methods.setMethodCallHandler(this)
         events.setStreamHandler(this)
+        (applicationContext as? Application)?.registerActivityLifecycleCallbacks(activityCallbacks)
         binding.platformViewRegistry.registerViewFactory(
             "nap_mx_flutter/ad_view",
-            NapMxAdViewFactory(messenger, ::emit, ::activity) { mediation },
+            NapMxAdViewFactory(messenger, ::emit, ::activity, adViews) { mediation },
         )
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        (applicationContext as? Application)?.unregisterActivityLifecycleCallbacks(activityCallbacks)
         requests.values.forEach { it.dispose(false) }
         requests.clear()
+        adViews.clear()
         methods.setMethodCallHandler(null)
         events.setStreamHandler(null)
         eventSink = null
@@ -308,9 +345,15 @@ class NapMxFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                     if (finished.get()) return
                     showResult?.error("show_failed", "Ad closed before a show confirmation.", null)
                     showResult = null
+                    state = "closed"
                     emit(event("closed"))
-                    dispose(false)
-                    requests.remove(id, this@FullscreenRequest)
+                    // The SDK defines no order between the reward and the close callback, and
+                    // destroying the ad while a reward is still in flight loses that callback.
+                    // Keep the native ad alive for a bounded window so a late reward arrives.
+                    mainHandler.postDelayed({
+                        dispose(false)
+                        requests.remove(id, this@FullscreenRequest)
+                    }, REWARD_GRACE_MS)
                 }
                 override fun onAdShowFailed(
                     adView: Any?, adapterName: String, errorCode: Int, errorMsg: String?,
@@ -329,8 +372,13 @@ class NapMxFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             }
         }
 
+        /**
+         * Reward delivery is intentionally not gated on [finished]: the reward can arrive
+         * after the close callback, and the SDK guarantees exactly one notification per
+         * impression, so the CAS alone keeps it exactly-once.
+         */
         private fun emitReward(transactionId: String?) {
-            if (!rewardSent.compareAndSet(false, true) || finished.get()) return
+            if (!rewardSent.compareAndSet(false, true)) return
             emit(event("rewarded").toMutableMap().apply {
                 put("reward", mapOf("transactionId" to (transactionId ?: "")))
             })
@@ -394,12 +442,13 @@ private class NapMxAdViewFactory(
     private val messenger: BinaryMessenger,
     private val emit: (Map<String, Any?>) -> Unit,
     private val activityProvider: () -> Activity?,
+    private val liveViews: MutableCollection<NapMxPlatformAdView>,
     private val mediationProvider: () -> Map<String, Map<String, String>>,
 ) : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
     override fun create(context: Context, viewId: Int, args: Any?): PlatformView = NapMxPlatformAdView(
         context, viewId, (args as? Map<*, *>) ?: emptyMap<Any, Any>(), messenger, emit,
-        activityProvider, mediationProvider,
-    )
+        activityProvider, liveViews, mediationProvider,
+    ).also(liveViews::add)
 }
 
 private class NapMxPlatformAdView(
@@ -409,6 +458,7 @@ private class NapMxPlatformAdView(
     messenger: BinaryMessenger,
     private val emit: (Map<String, Any?>) -> Unit,
     private val activityProvider: () -> Activity?,
+    private val liveViews: MutableCollection<NapMxPlatformAdView>,
     private val mediationProvider: () -> Map<String, Map<String, String>>,
 ) : PlatformView, MethodChannel.MethodCallHandler {
     private val format = args["format"] as? String ?: ""
@@ -420,6 +470,28 @@ private class NapMxPlatformAdView(
     private var disposed = false
     private var loading = false
     private var startedAt = 0L
+
+    /**
+     * Held as a field on purpose: [AMMBannerView.setAdViewListener] stores the listener in a
+     * [java.lang.ref.WeakReference], so an anonymous listener scoped to [load] would be
+     * collectible and the banner would silently stop reporting events.
+     */
+    private val adListener = object : AdListener() {
+        override fun onReceivedAd(type: AdNetworkType, view: Any) {
+            loading = false; emitEvent("loaded", type.adapterName)
+        }
+
+        @Suppress("DEPRECATION")
+        override fun onReceivedAd(name: String, view: Any) { loading = false; emitEvent("loaded", name) }
+        override fun onFailedToReceiveAd(code: Int, message: String?) {
+            loading = false; emitError("load_failed", message ?: "Ad load failed.", code)
+        }
+        override fun onAdDisplayed() = emitEvent("shown")
+        override fun onAdClicked() = emitEvent("clicked")
+        override fun onAdClosed() = emitEvent("closed")
+        override fun onAdCompleted() = emitEvent("completed")
+        override fun onAdSkipped() = emitEvent("skipped")
+    }
 
     init {
         channel.setMethodCallHandler(this)
@@ -444,23 +516,8 @@ private class NapMxPlatformAdView(
             infoBuilder.setAdapterConfig(adapter, config)
         }
         val info = infoBuilder.build()
-        val listener = object : AdListener() {
-            override fun onReceivedAd(type: AdNetworkType, view: Any) {
-                loading = false; emitEvent("loaded", type.adapterName)
-            }
-            @Suppress("DEPRECATION")
-            override fun onReceivedAd(name: String, view: Any) { loading = false; emitEvent("loaded", name) }
-            override fun onFailedToReceiveAd(code: Int, message: String?) {
-                loading = false; emitError("load_failed", message ?: "Ad load failed.", code)
-            }
-            override fun onAdDisplayed() = emitEvent("shown")
-            override fun onAdClicked() = emitEvent("clicked")
-            override fun onAdClosed() = emitEvent("closed")
-            override fun onAdCompleted() = emitEvent("completed")
-            override fun onAdSkipped() = emitEvent("skipped")
-        }
         val created: View = when (format) {
-            "banner" -> AMMBannerView(hostContext).apply { setAdInfo(info); setAdViewListener(listener) }
+            "banner" -> AMMBannerView(hostContext).apply { setAdInfo(info); setAdViewListener(adListener) }
             "native" -> AMMNativeAdView(hostContext).apply {
                 setAdInfo(info)
                 setViewBinder(NativeAdViewBinder.Builder(R.layout.nap_mx_native_ad)
@@ -468,9 +525,9 @@ private class NapMxPlatformAdView(
                     .setAdvertiserId(R.id.nap_mx_tv_adv).setDescriptionId(R.id.nap_mx_tv_desc)
                     .setMainViewId(R.id.nap_mx_iv_main).setCtaId(R.id.nap_mx_btn_cta)
                     .setAdChoicesPosition(AdChoicesPosition.RIGHT_TOP).setAddGAMAdAttribute(false).build())
-                setAdViewListener(listener)
+                setAdViewListener(adListener)
             }
-            "inlineVideo" -> AMMVideoView(hostContext).apply { setAdInfo(info); setAdViewListener(listener) }
+            "inlineVideo" -> AMMVideoView(hostContext).apply { setAdInfo(info); setAdViewListener(adListener) }
             else -> { loading = false; emitError("unsupported", "Unsupported view format: $format", null); return }
         }
         stopCurrent(); adView = created; container.removeAllViews()
@@ -482,6 +539,22 @@ private class NapMxPlatformAdView(
         }
     }
 
+    /**
+     * The SDK requires inline ad views to receive the host Activity's onResume/onPause so
+     * that refresh timers, video playback and viewability tracking follow the app state.
+     */
+    fun onHostResume() { when (val value = adView) {
+        is AMMBannerView -> value.onResume()
+        is AMMNativeAdView -> value.onResume()
+        is AMMVideoView -> value.onResume()
+    } }
+
+    fun onHostPause() { when (val value = adView) {
+        is AMMBannerView -> value.onPause()
+        is AMMNativeAdView -> value.onPause()
+        is AMMVideoView -> value.onPause()
+    } }
+
     private fun stopCurrent() {
         when (val value = adView) {
             is AMMBannerView -> value.stop()
@@ -492,8 +565,10 @@ private class NapMxPlatformAdView(
     }
     private fun release(final: Boolean) {
         loading = false; stopCurrent()
-        if (final) { disposed = true; channel.setMethodCallHandler(null); emitEvent("disposed") }
-        else emitEvent("cancelled")
+        if (final) {
+            liveViews.remove(this)
+            disposed = true; channel.setMethodCallHandler(null); emitEvent("disposed")
+        } else emitEvent("cancelled")
     }
     override fun dispose() = release(true)
     private fun emitEvent(type: String, network: String? = null) {
