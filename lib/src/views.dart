@@ -23,16 +23,23 @@ final class NapMxAdViewController {
   final StreamController<NapMxEvent> _events = StreamController.broadcast();
   bool _disposed = false;
 
+  /// Events filtered to this PlatformView's [viewId].
   Stream<NapMxEvent> get events => _events.stream;
 
+  /// Starts one native ad load for this view.
   Future<void> load() => _invoke('load');
+
+  /// Cancels the current native load while keeping the view reusable.
   Future<void> cancel() => _invoke('cancel');
 
+  /// Releases native views, callbacks, and the filtered event stream.
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
     try {
       await _channel.invokeMethod<void>('dispose');
+    } on PlatformException catch (error) {
+      throw NapMxError.fromPlatformException(error);
     } finally {
       await _subscription.cancel();
       await _events.close();
@@ -44,7 +51,11 @@ final class NapMxAdViewController {
     if (!NapMx.isInitialized) {
       throw StateError('Call NapMx.initialize before loading an ad view.');
     }
-    await _channel.invokeMethod<void>(method);
+    try {
+      await _channel.invokeMethod<void>(method);
+    } on PlatformException catch (error) {
+      throw NapMxError.fromPlatformException(error);
+    }
   }
 }
 
@@ -66,11 +77,23 @@ class NapMxAdView extends StatelessWidget {
         );
 
   final NapMxAdFormat format;
+
+  /// Android accepts arbitrary SDK string IDs; iOS requires decimal digits.
   final String adUnitId;
+
+  /// Called once the underlying PlatformView and controller are ready.
   final ValueChanged<NapMxAdViewController> onViewCreated;
+
+  /// Optional slot width. Defaults to all available horizontal space.
   final double? width;
+
+  /// Optional slot height; use a bounded value that preserves ad assets.
   final double? height;
+
+  /// Whether the native view should load immediately after creation.
   final bool autoLoad;
+
+  /// Requested initial mute state for video formats when supported by the SDK.
   final bool muted;
 
   @override

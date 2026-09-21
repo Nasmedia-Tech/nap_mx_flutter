@@ -15,7 +15,7 @@ void main() {
       if (call.method == 'getSdkInfo') {
         return <String, Object?>{
           'platform': 'test',
-          'pluginVersion': '0.1.0',
+          'pluginVersion': '0.1.1',
           'sdkVersion': '2.3.0',
         };
       }
@@ -69,6 +69,35 @@ void main() {
     expect(event.format, NapMxAdFormat.rewarded);
     expect(event.reward?.transactionId, 'tx-1');
     expect(event.error?.isNoFill, isTrue);
+  });
+
+  test('platform failures use the typed no-fill and timeout flags', () {
+    final androidNoFill = NapMxError.fromPlatformException(
+      PlatformException(
+        code: 'load_failed',
+        message: 'No ads',
+        details: -2147483640,
+      ),
+    );
+    final iosNoFill = NapMxError.fromPlatformException(
+      PlatformException(code: 'load_failed', details: -1),
+    );
+    final androidTimeout = NapMxError.fromPlatformException(
+      PlatformException(code: 'load_failed', details: -2147483644),
+    );
+    final pluginTimeout = NapMxError.fromPlatformException(
+      PlatformException(
+        code: 'timeout',
+        message: 'Timed out',
+        details: -8,
+      ),
+    );
+
+    expect(androidNoFill.isNoFill, isTrue);
+    expect(iosNoFill.isNoFill, isTrue);
+    expect(androidTimeout.isTimeout, isTrue);
+    expect(pluginTimeout.isNoFill, isFalse);
+    expect(pluginTimeout.isTimeout, isTrue);
   });
 
   test('concurrent initialization is once and controller enforces order',

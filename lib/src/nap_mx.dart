@@ -19,6 +19,9 @@ final class NapMx {
   static NapMxConfiguration? _initializingConfiguration;
   static NapMxConfiguration? _configuration;
 
+  /// Process-wide event stream for initialization and every ad request.
+  ///
+  /// Prefer a controller's filtered event stream for screen-specific logic.
   static Stream<NapMxEvent> get events => _events ??= _nativeEvents
       .receiveBroadcastStream()
       .map(
@@ -27,8 +30,12 @@ final class NapMx {
       )
       .asBroadcastStream();
 
+  /// Whether native initialization completed successfully in this process.
   static bool get isInitialized => _configuration != null;
 
+  /// The immutable configuration used for successful initialization.
+  ///
+  /// Throws [StateError] before [initialize] completes.
   static NapMxConfiguration get configuration {
     final value = _configuration;
     if (value == null) {
@@ -37,7 +44,11 @@ final class NapMx {
     return value;
   }
 
-  /// Initializes the native SDK once. Concurrent callers share one operation.
+  /// Initializes the native SDK once after the app resolves privacy choices.
+  ///
+  /// Concurrent calls with an equivalent configuration share one operation.
+  /// A later call with different values fails instead of silently replacing
+  /// SDK state that optional adapters may already have consumed.
   static Future<void> initialize(NapMxConfiguration configuration) {
     final existing = _configuration;
     if (existing != null) {
@@ -67,22 +78,25 @@ final class NapMx {
       await _methods.invokeMethod<void>('initialize', configuration.toMap());
       _configuration = configuration;
     } on PlatformException catch (error) {
-      throw NapMxError(
-        code: error.code,
-        message: error.message ?? 'Initialization failed',
-        nativeCode: error.details is int ? error.details as int : null,
-      );
+      throw NapMxError.fromPlatformException(error);
     } finally {
       _initializing = null;
       _initializingConfiguration = null;
     }
   }
 
+  /// Returns versions reported by the current platform implementation.
+  ///
+  /// Adapter information remains null when the native SDK does not expose it.
   static Future<NapMxSdkInfo> getSdkInfo() async {
-    final value = await _methods.invokeMapMethod<Object?, Object?>(
-      'getSdkInfo',
-    );
-    return NapMxSdkInfo.fromMap(value ?? const <Object?, Object?>{});
+    try {
+      final value = await _methods.invokeMapMethod<Object?, Object?>(
+        'getSdkInfo',
+      );
+      return NapMxSdkInfo.fromMap(value ?? const <Object?, Object?>{});
+    } on PlatformException catch (error) {
+      throw NapMxError.fromPlatformException(error);
+    }
   }
 
   static bool _sameConfiguration(
