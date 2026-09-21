@@ -142,5 +142,4 @@ final class NapMxFullscreenAdController {
       throw StateError('This controller is disposed.');
     }
   }
-
 }
