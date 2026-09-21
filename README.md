@@ -14,7 +14,7 @@ Android와 iOS의 [nap mx SDK](https://napmx.github.io/)를 같은 타입 기반
 | Android | API 21+, compile SDK 36, Java 17, Kotlin 2.3.20 |
 | nap mx Android | `admixer-ssp:2.3.0` (공식 BOM `2026.09.03`) |
 | iOS | iOS 13+, Xcode 16+, Swift 5.9 |
-| nap mx iOS | `AdMixerMediation` 2.5.0 |
+| nap mx iOS | `AdMixerMediation` 2.5.0 + `AdMixer` 1.3.0 |
 
 선택 어댑터에 따라 최소 OS가 올라갑니다. Android Google/Naver는 API 23, AppLovin/GMA NextGen은 API 24가 필요하고, iOS AdFit/Teads는 iOS 14가 필요합니다. iOS Teads는 Xcode 26 이상이 필요합니다.
 
@@ -88,7 +88,7 @@ AdFit, Pangle, Teads는 앱의 `settings.gradle(.kts)`에 각 공식 Maven 저�
 
 플러그인의 consumer R8 규칙과 네이티브 SDK 규칙이 자동 병합됩니다. 선택 네트워크가 별도 규칙을 요구하면 해당 네트워크 공식 가이드를 함께 적용하세요.
 
-iOS는 Flutter Swift Package Manager 또는 CocoaPods를 사용할 수 있습니다. 플러그인은 Core 2.5.0만 고정합니다. 선택 네트워크는 Xcode의 Package Dependencies에 [공식 SPM 패키지](https://napmx.github.io/ios/native/getting-started)를 추가하거나 `Podfile`에 필요한 Pod만 추가합니다.
+iOS는 Flutter Swift Package Manager 또는 CocoaPods를 사용할 수 있습니다. 플러그인은 공식 가이드의 필수 구성인 Mediation 2.5.0과 Core 1.3.0을 고정합니다. 선택 네트워크는 Xcode의 Package Dependencies에 [공식 SPM 패키지](https://napmx.github.io/ios/native/getting-started)를 추가하거나 `Podfile`에 필요한 Pod만 추가합니다.
 
 ```ruby
 pod 'AdMixerMediationGAM'      # 선택

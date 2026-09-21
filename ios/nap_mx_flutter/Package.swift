@@ -16,6 +16,10 @@ let package = Package(
         .package(
             url: "https://github.com/Nasmedia-Tech/iOS-SSP-Mediation-SPM.git",
             exact: "2.5.0"
+        ),
+        .package(
+            url: "https://github.com/Nasmedia-Tech/iOS-SSP-SPM.git",
+            exact: "1.3.0"
         )
     ],
     targets: [
@@ -23,7 +27,8 @@ let package = Package(
             name: "nap_mx_flutter",
             dependencies: [
                 .product(name: "FlutterFramework", package: "FlutterFramework"),
-                .product(name: "AdMixerMediation", package: "iOS-SSP-Mediation-SPM")
+                .product(name: "AdMixerMediation", package: "iOS-SSP-Mediation-SPM"),
+                .product(name: "AdMixer", package: "iOS-SSP-SPM")
             ],
             resources: [
                 .process("PrivacyInfo.xcprivacy")

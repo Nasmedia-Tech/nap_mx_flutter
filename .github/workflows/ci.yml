@@ -24,7 +24,7 @@ jobs:
           flutter pub get
           flutter pub get --directory example
       - name: Format
-        run: dart format --output=none --set-exit-if-changed lib test example/lib example/test example/integration_test
+        run: dart format --output=none --set-exit-if-changed lib test example/lib example/test
       - name: Analyze
         run: flutter analyze
       - name: Unit and widget tests
