@@ -25,6 +25,9 @@ enum NapMxAdFormat {
 }
 
 /// A privacy signal with an explicit unset state.
+///
+/// [unspecified] never means consent; it leaves the value unset so the host
+/// CMP or installed native SDK policy remains authoritative.
 enum NapMxConsentStatus { unspecified, granted, denied }
 
 /// Privacy signals forwarded to the native SDK before initialization.
@@ -38,9 +41,18 @@ final class NapMxPrivacySettings {
     this.usPrivacyString,
   });
 
+  /// Whether the user granted GDPR personalization consent.
   final NapMxConsentStatus gdprConsent;
+
+  /// US privacy sale/share choice; denied represents an opt-out.
   final NapMxConsentStatus usSaleConsent;
+
+  /// Whether the app/request is directed to children for COPPA purposes.
   final NapMxConsentStatus childDirected;
+
+  /// Whether the user is below the GDPR age of consent.
+  ///
+  /// The Android Core has no matching setter and rejects an explicit value.
   final NapMxConsentStatus underAgeOfConsent;
 
   /// IAB US Privacy string, for example `1YNN`. The host CMP owns this value.
@@ -84,16 +96,34 @@ final class NapMxConfiguration {
     }
   }
 
+  /// App-level nap mx Media Key.
+  ///
+  /// iOS requires decimal digits even though the cross-platform type is String.
   final String mediaKey;
+
+  /// Only the formats this app requests need to be present.
+  ///
+  /// iOS requires every value to contain decimal digits.
   final Map<NapMxAdFormat, String> adUnitIds;
+
+  /// Privacy choices forwarded before nap mx native initialization.
   final NapMxPrivacySettings privacy;
+
+  /// Native SDK diagnostic verbosity.
   final NapMxLogLevel logLevel;
+
+  /// Android global test mode. iOS rejects true because no equivalent API exists.
   final bool testMode;
+
+  /// Android native test-device identifiers, if officially assigned.
   final List<String> testDeviceIds;
 
-  /// Optional network keys. Only installed native adapters consume entries.
+  /// Optional Android adapter configuration consumed only by installed adapters.
+  ///
+  /// iOS rejects non-empty values; initialize iOS network SDKs in the host app.
   final Map<String, Map<String, String>> mediation;
 
+  /// Returns the configured ID for [format], or null when it was not registered.
   String? adUnitIdFor(NapMxAdFormat format) => adUnitIds[format];
 
   Map<String, Object?> toMap() => <String, Object?>{
@@ -126,8 +156,15 @@ final class NapMxSdkInfo {
         adapterVersions: map['adapterVersions'] as String?,
       );
 
+  /// `android`, `ios`, or a platform-specific fallback value.
   final String platform;
+
+  /// Version of this Flutter plugin implementation.
   final String pluginVersion;
+
+  /// Native Core/Mediation version when reported by the SDK.
   final String? sdkVersion;
+
+  /// Installed adapter information when exposed by the native platform.
   final String? adapterVersions;
 }

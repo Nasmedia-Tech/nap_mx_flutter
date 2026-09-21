@@ -6,6 +6,14 @@ Android와 iOS의 [nap mx SDK](https://napmx.github.io/)를 같은 타입 기반
 
 > 이 저장소는 초기 공개 버전입니다. `pub.dev`에는 아직 배포하지 않았으며 Git 의존성으로 설치합니다. 운영 전 반드시 발급받은 테스트 지면으로 두 플랫폼의 실기기 검증을 완료하세요.
 
+## 문서 바로가기
+
+- 처음 연동하거나 운영 앱에 적용할 때는 [상세 연동 가이드](docs/integration-guide.md)를 순서대로 진행하세요.
+- 실행 가능한 전체 화면은 [Sample 앱](example/lib/main.dart)에서 확인할 수 있습니다.
+- 네이티브 SDK 원문과 최신 네트워크 요구사항은 [nap mx 공식 가이드](https://napmx.github.io/)를 기준으로 합니다.
+
+아래 Quick Start는 이미 nap mx 연동 경험이 있는 개발자를 위한 축약본입니다. 개인정보 동의, 선택 어댑터, 앱 수명주기와 보상 중복 방지는 상세 가이드에서 설명합니다.
+
 ## 요구사항과 고정 버전
 
 | 항목 | 최소/고정 버전 |
@@ -56,7 +64,7 @@ dependencies:
   nap_mx_flutter:
     git:
       url: https://github.com/Nasmedia-Tech/nap_mx_flutter.git
-      ref: v0.1.0
+      ref: v0.1.1
 ```
 
 ```bash
@@ -122,7 +130,7 @@ await NapMx.initialize(
 );
 ```
 
-Android의 Media Key와 AdUnit ID는 문자열입니다. iOS 네이티브 SDK는 정수이므로 플러그인이 숫자 문자열인지 검사하고 잘못된 값은 `invalid_argument`로 실패시킵니다. 중복 초기화는 같은 설정에서만 허용됩니다.
+Android의 Media Key와 AdUnit ID는 문자열입니다. iOS 네이티브 SDK는 Media Key와 AdUnit ID가 모두 정수이므로 플러그인이 숫자 문자열인지 검사하고 잘못된 값은 `invalid_configuration` 또는 `invalid_ad_unit`으로 실패시킵니다. 중복 초기화는 같은 설정에서만 허용됩니다.
 
 ### 4. 배너·네이티브·인라인 동영상
 
@@ -215,10 +223,10 @@ CI는 등록된 self-hosted macOS ARM64 runner에서 format/analyze/test/pub dry
 
 | 증상 | 확인할 항목 |
 |---|---|
-| `invalid_argument` | 빈 키/ID, iOS에서 숫자가 아닌 Media Key·AdUnit ID |
+| `invalid_configuration` / `invalid_ad_unit` | 빈 키/ID, iOS에서 숫자가 아닌 Media Key·AdUnit ID |
 | `not_initialized` | `NapMx.initialize` 완료 전에 요청했는지 확인 |
-| `no_fill` | 테스트 지면·서버 워터폴·재고 확인. 성공으로 재해석하지 않음 |
-| `adapter_not_found` 또는 전체 no-fill | 선택 어댑터 의존성, 저장소, 앱 ID 및 네트워크 초기화 확인 |
+| `NapMxError.isNoFill == true` | 테스트 지면·서버 워터폴·재고 확인. 성공으로 재해석하지 않음 |
+| `load_failed`와 어댑터 관련 native code | 선택 어댑터 의존성, 저장소, 앱 ID 및 네트워크 초기화 확인 |
 | `timeout` | 네트워크 상태와 30초 기본 timeout 확인. 자동 무한 재요청 금지 |
 | show 실패 | load 성공 이벤트 이후 같은 controller에서 show했는지 확인 |
 
