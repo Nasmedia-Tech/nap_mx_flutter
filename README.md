@@ -26,7 +26,7 @@ Android와 iOS의 [nap mx SDK](https://napmx.github.io/)를 같은 타입 기반
 |---|---|---|---|
 | 배너 | 지원 | 지원 | `NapMxAdView` / 실제 SDK 뷰 |
 | 전면 | 지원 | 지원 | `NapMxFullscreenAdController` |
-| 네이티브 | 지원 | 지원 | SDK binder/XIB를 포함한 실제 SDK 뷰 |
+| 네이티브 | 지원 | 지원 | SDK binder/네이티브 템플릿을 포함한 실제 SDK 뷰 |
 | 인스트림(인라인) 동영상 | 지원 | 지원 | `NapMxAdView` / 실제 SDK 뷰 |
 | 아웃스트림(전면) 동영상 | 지원 | 지원 | `NapMxFullscreenAdController` |
 | 리워드 동영상 | 지원 | 지원 | 실제 SDK reward 콜백만 전달 |
