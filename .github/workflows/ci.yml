@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  flutter-and-android:
+    runs-on: [self-hosted, macOS, ARM64]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.9
+          channel: stable
+          cache: true
+      - name: Install dependencies
+        run: |
+          flutter pub get
+          flutter pub get --directory example
+      - name: Format
+        run: dart format --output=none --set-exit-if-changed lib test example/lib example/test example/integration_test
+      - name: Analyze
+        run: flutter analyze
+      - name: Unit and widget tests
+        run: |
+          flutter test
+          cd example
+          flutter test
+      - name: Package dry run
+        run: dart pub publish --dry-run
+      - name: Android debug and release builds
+        working-directory: example
+        run: |
+          flutter build apk --debug --no-pub
+          flutter build apk --release --no-pub
+
+  ios-simulator:
+    runs-on: [self-hosted, macOS, ARM64]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.9
+          channel: stable
+          cache: true
+      - name: Install dependencies
+        run: |
+          flutter config --enable-swift-package-manager
+          flutter pub get
+          flutter pub get --directory example
+      - name: Build iOS Simulator
+        working-directory: example
+        run: flutter build ios --simulator --no-codesign --no-pub
