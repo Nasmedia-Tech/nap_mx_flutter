@@ -8,6 +8,7 @@ Android와 iOS의 [nap mx SDK](https://napmx.github.io/)를 같은 타입 기반
 
 ## 문서 바로가기
 
+- 공개 배포용 순서형 문서는 [nap mx Flutter SDK (Beta) 공식 가이드](https://napmx.github.io/#/flutter/)에서 확인하세요.
 - 처음 연동하거나 운영 앱에 적용할 때는 [상세 연동 가이드](doc/integration-guide.md)를 순서대로 진행하세요.
 - 실행 가능한 전체 화면은 [Sample 앱](example/lib/main.dart)에서 확인할 수 있습니다.
 - 네이티브 SDK 원문과 최신 네트워크 요구사항은 [nap mx 공식 가이드](https://napmx.github.io/)를 기준으로 합니다.
@@ -170,6 +171,8 @@ await ad.show();
 await subscription.cancel();
 await ad.dispose();
 ```
+
+서버 기반 지급 검증을 사용하면 앱 콜백과 S2S 콜백의 동일한 `transaction_id`를 `(adunit_id, transaction_id)` 고유 키로 대조하세요. 콜백 URL 등록과 재시도 정책은 [공식 Flutter 리워드 가이드](https://napmx.github.io/#/flutter/ad-formats)를 확인하세요.
 
 각 controller는 하나의 요청만 소유합니다. `load → show → dispose` 순서를 지키며, 요청 ID로 이벤트를 분리하고 timeout/no-fill/cancel/dispose 이후 콜백을 구분합니다.
 

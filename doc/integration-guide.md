@@ -2,6 +2,8 @@
 
 이 문서는 `nap_mx_flutter`를 실제 Android·iOS Flutter 앱에 적용하는 매체 개발자를 위한 순서형 가이드입니다. 플러그인은 Flutter와 nap mx 네이티브 SDK 사이의 공통 API를 제공하지만, 매체 계정 발급, 개인정보 동의 UI, 선택 광고 네트워크의 앱 키와 네이티브 초기화는 호스트 앱의 책임입니다.
 
+웹에서 읽는 공개 문서는 [nap mx Flutter SDK (Beta) 공식 가이드](https://napmx.github.io/#/flutter/)를 확인하세요. 이 저장소 문서는 릴리스 태그와 함께 보존되는 상세 참조입니다.
+
 최신 네이티브 요구사항은 [nap mx 공식 가이드](https://napmx.github.io/)가 기준입니다. 이 문서의 검증 기준은 다음과 같습니다.
 
 | 항목 | 고정/검증 버전 |
