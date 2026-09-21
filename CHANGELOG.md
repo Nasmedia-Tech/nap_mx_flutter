@@ -1,3 +1,17 @@
+## Unreleased
+
+- Keep a closed full-screen ad alive briefly so a reward the network reports
+  after the close callback still reaches the app, and stop gating reward
+  delivery on teardown state. Reward delivery stays exactly-once.
+- Hold the Android inline ad listener in a field. `AMMBannerView` keeps it in a
+  `WeakReference`, so the previous request-scoped listener could be collected
+  and the banner would silently stop reporting events.
+- Forward the host Activity's `onResume`/`onPause` to Android banner, native,
+  and inline-video views, which the native SDK requires.
+- Document that `customParams` reach iOS on the rewarded format, correcting the
+  previous claim that iOS ignores them.
+- Document the `play-services-ads` 25.2.0 ceiling required by the Android SDK.
+
 ## 0.1.1
 
 - Add a commented, publisher-oriented Android and iOS integration guide.

@@ -233,7 +233,9 @@ CI는 등록된 self-hosted macOS ARM64 runner에서 format/analyze/test/pub dry
 | `timeout` | 네트워크 상태와 30초 기본 timeout 확인. 자동 무한 재요청 금지 |
 | show 실패 | load 성공 이벤트 이후 같은 controller에서 show했는지 확인 |
 
-Android 백그라운드 복귀나 Activity 재생성 시 플러그인은 현재 Activity를 다시 연결합니다. iOS는 foreground-active Scene의 ViewController를 메인 스레드에서 사용합니다. 화면 종료 시 controller를 dispose해 참조와 늦은 콜백을 해제하세요.
+Android 백그라운드 복귀나 Activity 재생성 시 플러그인은 현재 Activity를 다시 연결하고, 배너·네이티브·인라인 동영상 View에 SDK가 요구하는 `onResume`/`onPause`를 호스트 Activity 상태에 맞춰 전달합니다. iOS는 foreground-active Scene의 ViewController를 메인 스레드에서 사용합니다. 화면 종료 시 controller를 dispose해 참조와 늦은 콜백을 해제하세요.
+
+리워드는 예외입니다. 네이티브 SDK는 보상(`rewarded`)과 닫힘(`closed`)의 도착 순서를 보장하지 않으므로, `closed`를 받자마자 controller를 dispose하면 뒤늦게 도착하는 보상 콜백을 놓칠 수 있습니다. 플러그인은 닫힘 이후에도 네이티브 광고를 짧은 유예 시간 동안 유지하지만, 앱도 `rewarded`를 받았거나 유예 시간이 지난 뒤에 dispose해야 합니다. 최종 지급 근거는 S2S 콜백의 `transaction_id`입니다.
 
 ## 보안과 라이선스
 

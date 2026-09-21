@@ -160,5 +160,9 @@ final class NapMxEvent {
   final NapMxError? error;
 
   /// Reward details, present only for a real SDK `rewarded` callback.
+  ///
+  /// The native SDKs define no order between [NapMxEventType.rewarded] and
+  /// [NapMxEventType.closed], so a reward can arrive after the ad closed. Do
+  /// not dispose the controller on `closed` if you still owe a reward.
   final NapMxReward? reward;
 }

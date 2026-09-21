@@ -57,8 +57,10 @@ final class NapMxFullscreenAdController {
 
   /// Loads one ad and completes after native success or failure.
   ///
-  /// [customParams] are forwarded by Android. iOS currently ignores them, so
-  /// cross-platform behavior must not depend on these values.
+  /// [customParams] reach the reward S2S callback. Android forwards them for
+  /// every full-screen format; the iOS SDK accepts them only on the rewarded
+  /// format, so they are dropped for the two interstitial formats there.
+  /// `transaction_id` is reserved by the SDK and must not be overridden.
   Future<void> load({Map<String, String> customParams = const {}}) async {
     _ensureUsable();
     if (_state == NapMxAdState.loading || _state == NapMxAdState.loaded) {
@@ -100,6 +102,11 @@ final class NapMxFullscreenAdController {
   }
 
   /// Releases native ad references and closes the filtered event stream.
+  ///
+  /// For [NapMxAdFormat.rewarded], disposing immediately on
+  /// [NapMxEventType.closed] can drop a reward the network reports after the
+  /// close callback. Wait for [NapMxEventType.rewarded] or a short grace
+  /// period, and treat the S2S callback as the authoritative record.
   Future<void> dispose() async {
     if (_state == NapMxAdState.disposed) return;
     _state = NapMxAdState.disposed;

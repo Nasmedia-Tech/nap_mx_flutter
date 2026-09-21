@@ -118,6 +118,19 @@ dependencies {
 
 Core만 사용할 때는 위 어댑터 의존성이 필요 없습니다. 모든 어댑터를 편의상 한꺼번에 설치하면 앱 크기, Manifest, 개인정보 선언과 네트워크 초기화 범위가 불필요하게 커집니다.
 
+`admixer-admanager`를 사용한다면 `play-services-ads`를 25.2.0으로 고정하세요. 공식 Android 가이드는 25.3.0 이상을 비호환으로 명시합니다. Flutter 앱은 다른 광고·분석 플러그인이 같은 아티팩트를 전이 의존으로 끌어오는 경우가 많아, 고정하지 않으면 상위 버전으로 해석될 수 있습니다.
+
+```kotlin
+// admixer-admanager를 사용할 때만 적용합니다.
+configurations.configureEach {
+    resolutionStrategy {
+        force("com.google.android.gms:play-services-ads:25.2.0")
+    }
+}
+```
+
+`./gradlew :app:dependencies --configuration releaseRuntimeClasspath`로 실제 해석된 버전을 확인하세요.
+
 GMA NextGen을 선택했다면 classic Google Mobile Ads SDK가 함께 해석되지 않도록 공식 가이드의 전역 exclude가 추가로 필요합니다.
 
 ```kotlin
@@ -529,8 +542,9 @@ final rewarded = NapMxFullscreenAdController(
 );
 
 // show() Future는 광고가 닫힐 때가 아니라 "표시 성공" 콜백에서 완료됩니다.
-// 따라서 closed 전까지 controller와 이벤트 구독을 유지합니다.
-final closed = Completer<void>();
+// 또한 보상과 닫힘의 도착 순서는 네이티브 SDK가 보장하지 않으므로,
+// closed를 받자마자 dispose하면 뒤늦게 오는 보상을 놓칠 수 있습니다.
+final finished = Completer<void>();
 final subscription = rewarded.events.listen((event) {
   if (event.type == NapMxEventType.rewarded && event.reward != null) {
     final transactionId = event.reward!.transactionId;
@@ -539,24 +553,34 @@ final subscription = rewarded.events.listen((event) {
       // 메모리 Set만으로는 앱 재시작/다중 기기 중복을 막을 수 없습니다.
       unawaited(rewardRepository.grantOnce(transactionId));
     }
+    // 보상을 받았으면 더 기다릴 이유가 없습니다.
+    if (!finished.isCompleted) finished.complete();
   }
 
-  if ((event.type == NapMxEventType.closed ||
-          event.type == NapMxEventType.showFailed) &&
-      !closed.isCompleted) {
-    closed.complete();
+  // 표시 자체가 실패하면 보상도 닫힘도 오지 않습니다.
+  if (event.type == NapMxEventType.showFailed && !finished.isCompleted) {
+    finished.complete();
+  }
+
+  // 닫힘이 먼저 왔다면 보상이 뒤따를 수 있으므로 짧게 기다렸다가 정리합니다.
+  if (event.type == NapMxEventType.closed && !finished.isCompleted) {
+    Future<void>.delayed(const Duration(seconds: 2), () {
+      if (!finished.isCompleted) finished.complete();
+    });
   }
 });
 
 try {
   await rewarded.load();
   await rewarded.show();
-  await closed.future;
+  await finished.future;
 } finally {
   await subscription.cancel();
   await rewarded.dispose();
 }
 ```
+
+보상 조건을 채우지 못한 사용자는 닫힘만 받습니다. 이때는 위 유예 시간이 지난 뒤 정리되며 지급은 일어나지 않습니다. 지급 누락을 완전히 막아야 한다면 S2S Reward Callback을 함께 사용하고 `transaction_id`를 최종 기준으로 삼으세요.
 
 보상 수량과 종류는 플러그인이 만들지 않습니다. 매체의 상품 정책과 서버 검증 결과를 기준으로 지급하세요. 빈 transaction ID가 전달될 가능성에 대한 정책도 백엔드와 합의하고, 임의 ID를 SDK transaction ID로 위장하지 마세요.
 
