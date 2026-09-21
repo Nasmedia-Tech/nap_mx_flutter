@@ -686,20 +686,65 @@ private func activeViewController() -> UIViewController? {
   return controller
 }
 
-private func resourceBundle() -> Bundle {
-  #if SWIFT_PACKAGE
-  return Bundle.module
-  #else
-  let host = Bundle(for: NapMxFlutterPlugin.self)
-  if let url = host.url(forResource: "nap_mx_flutter_resources", withExtension: "bundle"),
-     let resources = Bundle(url: url) {
-    return resources
-  }
-  return host
-  #endif
-}
-
+@MainActor
 private func loadNativeTemplate() -> AMMNativeAdView? {
-  UINib(nibName: "AMMNativeAdView300x250", bundle: resourceBundle())
-    .instantiate(withOwner: nil, options: nil).first as? AMMNativeAdView
+  let nativeView = AMMNativeAdView()
+  nativeView.backgroundColor = .systemBackground
+
+  let media = UIView()
+  let icon = UIImageView()
+  let headline = UILabel()
+  let advertiser = UILabel()
+  let description = UILabel()
+  let callToAction = UIButton(type: .system)
+  for view in [media, icon, headline, advertiser, description, callToAction] {
+    view.translatesAutoresizingMaskIntoConstraints = false
+    nativeView.addSubview(view)
+  }
+
+  icon.contentMode = .scaleAspectFill
+  icon.clipsToBounds = true
+  headline.font = .preferredFont(forTextStyle: .headline)
+  headline.numberOfLines = 2
+  advertiser.font = .preferredFont(forTextStyle: .caption1)
+  advertiser.textColor = .secondaryLabel
+  description.font = .preferredFont(forTextStyle: .caption1)
+  description.textColor = .secondaryLabel
+  description.numberOfLines = 2
+  callToAction.setTitle("Learn more", for: .normal)
+
+  NSLayoutConstraint.activate([
+    media.topAnchor.constraint(equalTo: nativeView.topAnchor),
+    media.leadingAnchor.constraint(equalTo: nativeView.leadingAnchor),
+    media.trailingAnchor.constraint(equalTo: nativeView.trailingAnchor),
+    media.heightAnchor.constraint(equalToConstant: 150),
+    icon.topAnchor.constraint(equalTo: media.bottomAnchor, constant: 10),
+    icon.leadingAnchor.constraint(equalTo: nativeView.leadingAnchor, constant: 12),
+    icon.widthAnchor.constraint(equalToConstant: 44),
+    icon.heightAnchor.constraint(equalToConstant: 44),
+    headline.topAnchor.constraint(equalTo: icon.topAnchor),
+    headline.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: 8),
+    headline.trailingAnchor.constraint(equalTo: nativeView.trailingAnchor, constant: -12),
+    advertiser.topAnchor.constraint(equalTo: headline.bottomAnchor, constant: 2),
+    advertiser.leadingAnchor.constraint(equalTo: headline.leadingAnchor),
+    advertiser.trailingAnchor.constraint(equalTo: headline.trailingAnchor),
+    description.topAnchor.constraint(equalTo: icon.bottomAnchor, constant: 8),
+    description.leadingAnchor.constraint(equalTo: icon.leadingAnchor),
+    description.trailingAnchor.constraint(
+      lessThanOrEqualTo: callToAction.leadingAnchor,
+      constant: -8
+    ),
+    callToAction.trailingAnchor.constraint(equalTo: nativeView.trailingAnchor, constant: -8),
+    callToAction.bottomAnchor.constraint(equalTo: nativeView.bottomAnchor, constant: -8),
+    callToAction.widthAnchor.constraint(equalToConstant: 100),
+    callToAction.heightAnchor.constraint(equalToConstant: 36),
+  ])
+
+  nativeView.media = media
+  nativeView.iv_icon = icon
+  nativeView.l_headline = headline
+  nativeView.l_advertiser = advertiser
+  nativeView.l_description = description
+  nativeView.b_cta = callToAction
+  return nativeView
 }

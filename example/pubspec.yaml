@@ -1,6 +1,7 @@
 name: nap_mx_flutter_example
 description: Demonstrates all public nap_mx_flutter ad APIs.
 publish_to: 'none'
+version: 1.0.0+1
 
 environment:
   sdk: ^3.12.2

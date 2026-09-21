@@ -19,8 +19,7 @@ Flutter plugin for the nap mx mobile advertising SDK.
   s.platform = :ios, '13.0'
   s.resource_bundles = {
     'nap_mx_flutter_resources' => [
-      'nap_mx_flutter/Sources/nap_mx_flutter/PrivacyInfo.xcprivacy',
-      'nap_mx_flutter/Sources/nap_mx_flutter/AMMNativeAdView300x250.xib'
+      'nap_mx_flutter/Sources/nap_mx_flutter/PrivacyInfo.xcprivacy'
     ]
   }
 

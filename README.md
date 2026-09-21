@@ -203,8 +203,8 @@ dart pub publish --dry-run
 cd example
 flutter pub get
 flutter test
-flutter build apk --debug
 flutter build apk --release
+flutter build apk --debug
 # macOS/Xcode 환경
 flutter build ios --simulator --no-codesign
 ```
