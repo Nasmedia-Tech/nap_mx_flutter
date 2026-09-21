@@ -1,0 +1,32 @@
+name: nap_mx_flutter
+description: Flutter plugin for nap mx ads on Android and iOS, with native views and full-screen controllers.
+version: 0.1.0
+homepage: https://napmx.github.io/
+repository: https://github.com/Nasmedia-Tech/nap_mx_flutter
+issue_tracker: https://github.com/Nasmedia-Tech/nap_mx_flutter/issues
+topics:
+  - advertising
+  - mediation
+  - mobile-ads
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+  flutter: '>=3.24.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.nasmedia.nap_mx_flutter
+        pluginClass: NapMxFlutterPlugin
+      ios:
+        pluginClass: NapMxFlutterPlugin

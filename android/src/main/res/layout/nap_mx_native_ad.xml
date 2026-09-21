@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#FFFFFF"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/nap_mx_ad_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#66000000"
+        android:paddingHorizontal="5dp"
+        android:paddingVertical="2dp"
+        android:text="Ad"
+        android:textColor="#FFFFFF"
+        android:textSize="10sp" />
+
+    <ImageView
+        android:id="@+id/nap_mx_iv_icon"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_below="@id/nap_mx_ad_label"
+        android:layout_marginTop="8dp"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop" />
+
+    <TextView
+        android:id="@+id/nap_mx_tv_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@id/nap_mx_iv_icon"
+        android:layout_marginStart="8dp"
+        android:layout_toEndOf="@id/nap_mx_iv_icon"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:textColor="#202124"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/nap_mx_tv_adv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/nap_mx_tv_title"
+        android:layout_marginStart="8dp"
+        android:layout_toEndOf="@id/nap_mx_iv_icon"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="#5F6368"
+        android:textSize="11sp" />
+
+    <TextView
+        android:id="@+id/nap_mx_tv_desc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/nap_mx_iv_icon"
+        android:layout_marginTop="8dp"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:textColor="#3C4043"
+        android:textSize="12sp" />
+
+    <FrameLayout
+        android:id="@+id/nap_mx_iv_main"
+        android:layout_width="match_parent"
+        android:layout_height="168dp"
+        android:layout_below="@id/nap_mx_tv_desc"
+        android:layout_marginTop="8dp" />
+
+    <Button
+        android:id="@+id/nap_mx_btn_cta"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_below="@id/nap_mx_iv_main"
+        android:layout_marginTop="8dp"
+        android:textAllCaps="false" />
+</RelativeLayout>

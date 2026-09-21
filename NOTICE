@@ -1,0 +1,6 @@
+nap_mx_flutter
+Copyright 2026 KT Nasmedia
+
+This plugin links to, but does not redistribute, nap mx Android and iOS SDK
+artifacts. Those dependencies and optional mediation SDKs retain their own
+copyright notices and license terms.
