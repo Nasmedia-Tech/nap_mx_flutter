@@ -46,6 +46,9 @@ android {
         consumerProguardFiles("consumer-rules.pro")
     }
 
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 kotlin {
@@ -57,4 +60,8 @@ kotlin {
 dependencies {
     implementation("io.github.nasmedia-tech:admixer-ssp:2.3.0")
     implementation("com.google.android.gms:play-services-ads-identifier:18.2.0")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.mockito:mockito-core:5.14.2")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
 }

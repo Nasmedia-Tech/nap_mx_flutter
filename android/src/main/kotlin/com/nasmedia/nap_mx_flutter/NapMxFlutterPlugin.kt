@@ -27,6 +27,30 @@ import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
+/** A view that has to follow the host Activity's resumed/paused state. */
+internal interface NapMxHostLifecycle {
+    fun onHostResume()
+    fun onHostPause()
+}
+
+/**
+ * Exactly-once gate for the SDK reward callback.
+ *
+ * Deliberately independent of request teardown: the network may report the reward
+ * after the close callback, so the gate must still let that first reward through.
+ */
+internal class NapMxRewardOnce {
+    private val sent = AtomicBoolean(false)
+
+    /** Returns the reward payload on the first call only, and null on every later one. */
+    fun claim(transactionId: String?): Map<String, Any?>? =
+        if (sent.compareAndSet(false, true)) {
+            mapOf("transactionId" to (transactionId ?: ""))
+        } else {
+            null
+        }
+}
+
 /** Flutter bridge for the published nap mx Android SDK. */
 class NapMxFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     EventChannel.StreamHandler, ActivityAware {
@@ -52,21 +76,21 @@ class NapMxFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private var mediation = emptyMap<String, Map<String, String>>()
     private val requests = ConcurrentHashMap<String, FullscreenRequest>()
     private val mainHandler = Handler(Looper.getMainLooper())
-    private val adViews = Collections.newSetFromMap(
-        ConcurrentHashMap<NapMxPlatformAdView, Boolean>(),
+    internal val adViews: MutableCollection<NapMxHostLifecycle> = Collections.newSetFromMap(
+        ConcurrentHashMap<NapMxHostLifecycle, Boolean>(),
     )
 
     /**
      * Inline ad views must follow the host Activity's resumed/paused state. Flutter gives a
      * plugin the Activity but not its lifecycle, so it is observed through the Application.
      */
-    private val activityCallbacks = object : Application.ActivityLifecycleCallbacks {
+    internal val activityCallbacks = object : Application.ActivityLifecycleCallbacks {
         override fun onActivityResumed(host: Activity) {
-            if (host === activity) adViews.forEach(NapMxPlatformAdView::onHostResume)
+            if (host === activity) adViews.forEach(NapMxHostLifecycle::onHostResume)
         }
 
         override fun onActivityPaused(host: Activity) {
-            if (host === activity) adViews.forEach(NapMxPlatformAdView::onHostPause)
+            if (host === activity) adViews.forEach(NapMxHostLifecycle::onHostPause)
         }
 
         override fun onActivityCreated(host: Activity, state: Bundle?) = Unit
@@ -241,7 +265,7 @@ class NapMxFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     ) {
         private val startedAt = System.currentTimeMillis()
         private val finished = AtomicBoolean(false)
-        private val rewardSent = AtomicBoolean(false)
+        private val rewardGate = NapMxRewardOnce()
         private var showResult: MethodChannel.Result? = null
         private var network: String? = null
         private var ad: Any? = null
@@ -374,14 +398,11 @@ class NapMxFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
 
         /**
          * Reward delivery is intentionally not gated on [finished]: the reward can arrive
-         * after the close callback, and the SDK guarantees exactly one notification per
-         * impression, so the CAS alone keeps it exactly-once.
+         * after the close callback, so [rewardGate] is what keeps it exactly-once.
          */
         private fun emitReward(transactionId: String?) {
-            if (!rewardSent.compareAndSet(false, true)) return
-            emit(event("rewarded").toMutableMap().apply {
-                put("reward", mapOf("transactionId" to (transactionId ?: "")))
-            })
+            val reward = rewardGate.claim(transactionId) ?: return
+            emit(event("rewarded").toMutableMap().apply { put("reward", reward) })
         }
 
         private fun failLoad(code: String, message: String, nativeCode: Int) {
@@ -438,11 +459,11 @@ class NapMxFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private fun emit(value: Map<String, Any?>) { mainHandler.post { eventSink?.success(value) } }
 }
 
-private class NapMxAdViewFactory(
+internal class NapMxAdViewFactory(
     private val messenger: BinaryMessenger,
     private val emit: (Map<String, Any?>) -> Unit,
     private val activityProvider: () -> Activity?,
-    private val liveViews: MutableCollection<NapMxPlatformAdView>,
+    private val liveViews: MutableCollection<NapMxHostLifecycle>,
     private val mediationProvider: () -> Map<String, Map<String, String>>,
 ) : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
     override fun create(context: Context, viewId: Int, args: Any?): PlatformView = NapMxPlatformAdView(
@@ -451,16 +472,16 @@ private class NapMxAdViewFactory(
     ).also(liveViews::add)
 }
 
-private class NapMxPlatformAdView(
+internal class NapMxPlatformAdView(
     context: Context,
     private val viewId: Int,
     args: Map<*, *>,
     messenger: BinaryMessenger,
     private val emit: (Map<String, Any?>) -> Unit,
     private val activityProvider: () -> Activity?,
-    private val liveViews: MutableCollection<NapMxPlatformAdView>,
+    private val liveViews: MutableCollection<NapMxHostLifecycle>,
     private val mediationProvider: () -> Map<String, Map<String, String>>,
-) : PlatformView, MethodChannel.MethodCallHandler {
+) : PlatformView, MethodChannel.MethodCallHandler, NapMxHostLifecycle {
     private val format = args["format"] as? String ?: ""
     private val adUnitId = args["adUnitId"] as? String ?: ""
     private val muted = args["muted"] as? Boolean ?: true
@@ -543,13 +564,13 @@ private class NapMxPlatformAdView(
      * The SDK requires inline ad views to receive the host Activity's onResume/onPause so
      * that refresh timers, video playback and viewability tracking follow the app state.
      */
-    fun onHostResume() { when (val value = adView) {
+    override fun onHostResume() { when (val value = adView) {
         is AMMBannerView -> value.onResume()
         is AMMNativeAdView -> value.onResume()
         is AMMVideoView -> value.onResume()
     } }
 
-    fun onHostPause() { when (val value = adView) {
+    override fun onHostPause() { when (val value = adView) {
         is AMMBannerView -> value.onPause()
         is AMMNativeAdView -> value.onPause()
         is AMMVideoView -> value.onPause()

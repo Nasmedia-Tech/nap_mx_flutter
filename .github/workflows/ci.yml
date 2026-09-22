@@ -39,6 +39,9 @@ jobs:
         run: |
           flutter build apk --release --no-pub
           flutter build apk --debug --no-pub
+      - name: Android plugin unit tests
+        working-directory: example/android
+        run: ./gradlew :nap_mx_flutter:testDebugUnitTest --console=plain
 
   ios-simulator:
     runs-on: [self-hosted, macOS, ARM64]

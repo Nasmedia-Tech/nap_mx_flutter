@@ -1,3 +1,12 @@
+## Unreleased
+
+- Add Android unit tests covering the 0.1.2 ad lifecycle fixes: host
+  Activity lifecycle observation and its scoping to the attached Activity, the
+  ad view registry, the banner listener being held in a field, and exactly-once
+  reward delivery that survives the ad closing first. CI now runs them.
+- Extract the reward gate and the host lifecycle contract behind internal seams
+  so the above can be tested without a device. No behaviour change.
+
 ## 0.1.2
 
 - Keep a closed full-screen ad alive briefly so a reward the network reports
