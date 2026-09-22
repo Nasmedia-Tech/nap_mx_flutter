@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.2
 
 - Keep a closed full-screen ad alive briefly so a reward the network reports
   after the close callback still reaches the app, and stop gating reward

@@ -56,7 +56,7 @@ dependencies:
   nap_mx_flutter:
     git:
       url: https://github.com/Nasmedia-Tech/nap_mx_flutter.git
-      ref: v0.1.1 # 검증된 공개 태그. main을 사용하지 마세요.
+      ref: v0.1.2 # 검증된 공개 태그. main을 사용하지 마세요.
 ```
 
 ```bash
