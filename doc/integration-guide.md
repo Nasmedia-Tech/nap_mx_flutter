@@ -129,7 +129,13 @@ configurations.configureEach {
 }
 ```
 
-`./gradlew :app:dependencies --configuration releaseRuntimeClasspath`로 실제 해석된 버전을 확인하세요.
+실제로 어떤 버전이 선택됐는지 확인하세요.
+
+```bash
+cd android
+# 뒤에 콜론을 붙여야 play-services-ads-identifier 가 함께 걸리지 않습니다.
+./gradlew :app:dependencies --configuration releaseRuntimeClasspath | grep "play-services-ads:"
+```
 
 GMA NextGen을 선택했다면 classic Google Mobile Ads SDK가 함께 해석되지 않도록 공식 가이드의 전역 exclude가 추가로 필요합니다.
 
