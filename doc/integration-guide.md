@@ -197,7 +197,29 @@ Naver Ad Manager의 `com.naver.gfpsdk.PUBLISHER_CD`는 공식 어댑터에서 �
 | Google Ad Manager, Naver Ad Manager | 23 |
 | AppLovin, GMA NextGen | 24 |
 
-플러그인은 Java 17로 빌드됩니다. Google Ad Manager 어댑터를 추가하면 호스트 프로젝트에 Kotlin 2.1 이상이 필요할 수 있으므로 기존 앱의 AGP·Kotlin 조합을 확인하세요.
+플러그인은 Java 17로 빌드되며 호스트의 AGP·Kotlin 버전을 사용합니다. Android 기준은 AGP 8.10.1 이상(compile SDK 36), Kotlin 2.1.0 이상이며 Kotlin 2.2.10을 권장합니다. SDK 2.3.0은 `kotlin-stdlib:2.2.10`에 의존하므로 stdlib를 호스트 컴파일러 버전으로 강제 낮추지 마세요. 선택 어댑터를 추가하면 해당 어댑터의 Kotlin·AGP 요구사항도 확인해야 합니다.
+
+AGP 8 호스트의 `android/settings.gradle.kts`에는 다음처럼 Kotlin 플러그인 버전을 선언합니다(AGP 선언과 Flutter 플러그인 로더 등 기존 설정은 유지).
+
+```kotlin
+plugins {
+    id("org.jetbrains.kotlin.android") version "2.2.10" apply false
+}
+```
+
+앱의 `android/app/build.gradle.kts`에서는 Android 플러그인 다음, Flutter 플러그인 전에 `id("org.jetbrains.kotlin.android")`를 적용합니다. nap_mx_flutter 모듈에는 호스트의 Kotlin 플러그인을 자동 적용하므로 로컬 복사본 수정이 필요하지 않습니다.
+
+AGP 9에서 `android.builtInKotlin=false`인 경우에도 위 설정이 필요합니다. Flutter 3.44에서는 `android.newDsl=false`도 유지하세요. 내장 Kotlin을 활성화한 AGP 9 호스트에는 Kotlin Android 플러그인을 추가하지 않으며, Flutter 앱의 내장 Kotlin 연동은 Flutter 3.47 이상에서 사용하세요.
+
+빌드 검증 조합(광고 실기기 동작 검증과 별개):
+
+| AGP / Gradle | Kotlin | 검증 범위 |
+|---|---|---|
+| 8.10.1 / 8.11.1 | 2.1.0, 2.2.10 | Flutter 3.44.9 예제 debug/release APK(R8 포함), Android 단위 테스트 |
+| 9.0.1 / 9.1.0 | 내장 Kotlin(2.2.10) | 독립 Android 호스트의 플러그인 debug/release AAR, Android 단위 테스트 |
+| 9.0.1 / 9.1.0 | 외부 KGP 2.3.20, 내장 Kotlin·새 DSL 비활성화 | 독립 Android 호스트의 플러그인 debug/release AAR, Android 단위 테스트 |
+
+AGP 9 검증은 Flutter embedding을 제공하는 독립 Android 호스트에서 수행했습니다. Flutter 3.47 앱 전체 빌드 및 광고 실기기 동작까지 검증한 결과는 아닙니다.
 
 ## 5. iOS 설정
 

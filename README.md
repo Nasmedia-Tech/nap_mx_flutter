@@ -20,12 +20,16 @@ Android와 iOS의 [nap mx SDK](https://napmx.github.io/)를 같은 타입 기반
 | 항목 | 최소/고정 버전 |
 |---|---|
 | Flutter / Dart | Flutter 3.24+, Dart 3.5+ (CI: Flutter 3.44.9) |
-| Android | API 21+, compile SDK 36, Java 17, Kotlin 2.3.20 |
+| Android | API 21+, compile SDK 36, Java 17; AGP 8.10.1+ / Kotlin 2.1.0+ (권장 2.2.10) |
 | nap mx Android | `admixer-ssp:2.3.0` (공식 BOM `2026.09.03`) |
 | iOS | iOS 13+, Xcode 16+, Swift 5.9 |
 | nap mx iOS | `AdMixerMediation` 2.5.0 + `AdMixer` 1.3.0 |
 
 선택 어댑터에 따라 최소 OS가 올라갑니다. Android Google/Naver는 API 23, AppLovin/GMA NextGen은 API 24가 필요하고, iOS AdFit/Teads는 iOS 14가 필요합니다. iOS Teads는 Xcode 26 이상이 필요합니다.
+
+Android 플러그인은 호스트의 AGP·Kotlin 버전을 사용합니다. AGP 8 호스트는 `android/settings.gradle(.kts)`에서 `org.jetbrains.kotlin.android`를 버전과 함께 선언하고, 앱 모듈에도 적용하세요. 플러그인 모듈에는 자동으로 적용합니다. 예제와 CI는 AGP 8.10.1 / Gradle 8.11.1에서 Kotlin 2.1.0 및 2.2.10 조합을 검증합니다. SDK 2.3.0의 `kotlin-stdlib` 의존성은 2.2.10이며, 호스트 컴파일러와 별도로 해석됩니다. stdlib를 2.1.0으로 강제 낮추지 마세요.
+
+AGP 9에서 `android.builtInKotlin=false`를 사용하는 호스트도 같은 방식으로 Kotlin 플러그인을 선언해야 합니다. AGP 9의 내장 Kotlin이 활성화된 모듈에는 별도 Kotlin Android 플러그인을 적용하지 않습니다. Flutter 3.44의 AGP 9 연동은 `android.builtInKotlin=false`와 `android.newDsl=false`가 필요하며, 내장 Kotlin을 켠 Flutter 앱은 Flutter 3.47 이상이 필요합니다. 자세한 내용은 [Flutter 공식 가이드](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors)를 확인하세요.
 
 ## 지원 범위
 

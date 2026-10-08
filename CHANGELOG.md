@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Fix Android Kotlin compilation on AGP 8 and AGP 9 hosts with built-in
+  Kotlin disabled. Use the host's AGP/Kotlin plugin versions instead of pinning
+  a separate buildscript classpath; retain AGP 9 built-in Kotlin support.
+- Move the example to AGP 8.10.1 / Kotlin 2.2.10 / Gradle 8.11.1.
 - Add Android unit tests covering the 0.1.2 ad lifecycle fixes: host
   Activity lifecycle observation and its scoping to the attached Activity, the
   ad view registry, the banner listener being held in a field, and exactly-once

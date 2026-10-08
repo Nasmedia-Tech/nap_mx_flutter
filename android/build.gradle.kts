@@ -1,19 +1,6 @@
 group = "com.nasmedia.nap_mx_flutter"
 version = "1.0-SNAPSHOT"
 
-buildscript {
-    val kotlinVersion = "2.3.20"
-    repositories {
-        google()
-        mavenCentral()
-    }
-
-    dependencies {
-        classpath("com.android.tools.build:gradle:9.0.1")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
-    }
-}
-
 allprojects {
     repositories {
         google()
@@ -23,6 +10,15 @@ allprojects {
 
 plugins {
     id("com.android.library")
+}
+
+// Plugin versions belong to the host. AGP 8 and AGP 9 hosts that opt out of
+// built-in Kotlin need the host's Kotlin Android plugin applied to this module.
+val agpMajor = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.substringBefore('.').toInt()
+val builtInKotlin = agpMajor >= 9 &&
+    providers.gradleProperty("android.builtInKotlin").orNull != "false"
+if (!builtInKotlin) {
+    apply(plugin = "org.jetbrains.kotlin.android")
 }
 
 android {
@@ -51,7 +47,8 @@ android {
     }
 }
 
-kotlin {
+// A conditionally applied plugin does not generate Kotlin DSL accessors.
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }

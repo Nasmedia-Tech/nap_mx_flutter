@@ -11,6 +11,12 @@ permissions:
 jobs:
   flutter-and-android:
     runs-on: [self-hosted, macOS, ARM64]
+    strategy:
+      fail-fast: false
+      matrix:
+        kotlin: ['2.1.0', '2.2.10']
+    env:
+      ORG_GRADLE_PROJECT_napMx.kotlinVersion: ${{ matrix.kotlin }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
