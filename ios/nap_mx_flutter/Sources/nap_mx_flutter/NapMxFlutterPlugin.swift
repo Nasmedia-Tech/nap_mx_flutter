@@ -3,7 +3,7 @@ import Flutter
 import UIKit
 
 public final class NapMxFlutterPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
-  private static let pluginVersion = "0.1.2"
+  private static let pluginVersion = "0.1.3"
   private var eventSink: FlutterEventSink?
   private var initialized = false
   private var fingerprint: String?

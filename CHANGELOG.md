@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.3
 
 - Fix Android Kotlin compilation on AGP 8 and AGP 9 hosts with built-in
   Kotlin disabled. Use the host's AGP/Kotlin plugin versions instead of pinning
