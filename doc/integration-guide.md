@@ -150,10 +150,11 @@ NextGen은 `admixer-admanager`와 함께 사용할 수 없으며 최소 API 24�
 
 ### 4.2 추가 Maven 저장소
 
-AdFit, Pangle, Teads를 사용할 때만 앱의 `android/settings.gradle.kts`에 필요한 저장소를 추가합니다.
+AdFit, Pangle, Teads를 사용할 때만 앱의 `android/build.gradle.kts`에 있는 `allprojects` 블록에 필요한 저장소를 추가합니다. 기본 Flutter 템플릿은 이 블록에서 저장소를 선언하므로, `settings.gradle.kts`의 `dependencyResolutionManagement`에 추가한 저장소는 사용되지 않아 의존성을 찾지 못합니다.
 
 ```kotlin
-dependencyResolutionManagement {
+// android/build.gradle.kts
+allprojects {
     repositories {
         google()
         mavenCentral()
