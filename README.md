@@ -90,7 +90,7 @@ dependencies {
 }
 ```
 
-AdFit, Pangle, Teads는 앱의 `settings.gradle(.kts)`에 각 공식 Maven 저장소를 추가해야 합니다. Google Ad Manager 사용 시 발급받은 앱 ID도 필요합니다.
+AdFit, Pangle, Teads는 앱의 `android/build.gradle(.kts)` `allprojects` 블록에 각 공식 Maven 저장소를 추가해야 합니다. Google Ad Manager 사용 시 발급받은 앱 ID도 필요합니다.
 
 ```xml
 <!-- android/app/src/main/AndroidManifest.xml의 application 안 -->
