@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.6
 
 - Update Android Core to 2.4.0 and iOS Mediation to 2.5.1; keep iOS Core at
   1.3.0 and align its CocoaPods pin with Swift Package Manager.

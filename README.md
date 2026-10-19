@@ -17,7 +17,7 @@ Android와 iOS의 [nap mx SDK](https://napmx.github.io/)를 같은 타입 기반
 
 ## 요구사항과 고정 버전
 
-아래 네이티브 버전은 다음 Flutter 플러그인 릴리스에 반영할 개발 버전 기준입니다. 현재 공개 태그 `v0.1.5`는 Android Core 2.3.0 / iOS Mediation 2.5.0을 사용합니다. 새 태그가 배포되기 전까지 설치 예제의 `v0.1.5`만으로 아래 업데이트가 적용되지는 않습니다.
+아래 네이티브 버전은 `v0.1.6` 기준입니다. 이전 태그 `v0.1.5`는 Android Core 2.3.0 / iOS Mediation 2.5.0을 사용합니다.
 
 | 항목 | 최소/고정 버전 |
 |---|---|
@@ -71,7 +71,7 @@ dependencies:
   nap_mx_flutter:
     git:
       url: https://github.com/Nasmedia-Tech/nap_mx_flutter.git
-      ref: v0.1.5
+      ref: v0.1.6
 ```
 
 ```bash
@@ -94,7 +94,7 @@ dependencies {
 
 AdFit, Pangle, Teads는 앱의 `android/build.gradle(.kts)` `allprojects` 블록에 각 공식 Maven 저장소를 추가해야 합니다. Google Ad Manager 사용 시 발급받은 앱 ID도 필요합니다.
 
-Google 광고 ID는 Core의 API 21 호환 `18.0.0`을 사용합니다. 앱의 `minSdk`가 23 이상이면 최신 수정판 `18.3.0`을 선택할 수 있습니다. 구형 Android 크래시가 있는 `18.2.0`은 사용하지 마세요. 현재 공개 태그 `v0.1.5`를 유지하는 앱의 별도 설정은 [상세 연동 가이드](doc/integration-guide.md#41-선택-어댑터)를 확인하세요.
+Google 광고 ID는 Core의 API 21 호환 `18.0.0`을 사용합니다. 앱의 `minSdk`가 23 이상이면 최신 수정판 `18.3.0`을 선택할 수 있습니다. 구형 Android 크래시가 있는 `18.2.0`은 사용하지 마세요. `v0.1.5`를 유지하는 앱의 별도 설정은 [상세 연동 가이드](doc/integration-guide.md#41-선택-어댑터)를 확인하세요.
 
 ```xml
 <!-- android/app/src/main/AndroidManifest.xml의 application 안 -->
@@ -162,7 +162,7 @@ await placementB.load();
 
 컨트롤러와 광고 뷰에는 사용할 ID를 명시하세요. `adUnitIdFor(format)`은 기존 맵만 조회합니다. 초기화 후 재호출하여 ID를 추가할 수 없으므로 사용할 지면을 처음에 모두 등록해야 합니다. 플러그인은 미등록 ID도 load 시 SDK로 전달하지만 실제 로드 성공 여부는 검증되지 않았습니다.
 
-이 API는 `v0.1.4`부터 제공됩니다. 위 설치 예시처럼 Git 의존성의 `ref`를 `v0.1.5`로 지정하세요. 자세한 내용은 [다중 지면 등록 가이드](doc/integration-guide.md#61-같은-포맷의-여러-지면-등록-014)를 참고하세요.
+이 API는 `v0.1.4`부터 제공됩니다. 위 설치 예시처럼 Git 의존성의 `ref`를 `v0.1.6`으로 지정하세요. 자세한 내용은 [다중 지면 등록 가이드](doc/integration-guide.md#61-같은-포맷의-여러-지면-등록-014)를 참고하세요.
 
 ### 4. 배너·네이티브·인라인 동영상
 
