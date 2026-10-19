@@ -105,14 +105,14 @@ Google 광고 ID는 Core의 API 21 호환 `18.0.0`을 사용합니다. 앱의 `m
 
 플러그인의 consumer R8 규칙과 네이티브 SDK 규칙이 자동 병합됩니다. 선택 네트워크가 별도 규칙을 요구하면 해당 네트워크 공식 가이드를 함께 적용하세요.
 
-iOS는 Flutter Swift Package Manager 또는 CocoaPods를 사용할 수 있습니다. 플러그인은 공식 가이드의 필수 구성인 Mediation 2.5.1과 Core 1.3.0을 고정합니다. 선택 네트워크는 Xcode의 Package Dependencies에 [공식 SPM 패키지](https://napmx.github.io/ios/native/getting-started)를 추가하거나 `Podfile`에 필요한 Pod만 추가합니다.
+iOS는 Flutter Swift Package Manager 또는 CocoaPods를 사용할 수 있습니다. 플러그인은 공식 가이드의 필수 구성인 Mediation 2.5.1과 Core 1.3.0을 고정합니다. 선택 네트워크는 Xcode의 Package Dependencies에 [공식 SPM 패키지](https://napmx.github.io/#/ios/native/getting-started)를 추가하거나 `Podfile`에 필요한 Pod만 추가합니다.
 
 ```ruby
 pod 'AdMixerMediationGAM'      # 선택
 pod 'AdMixerMediationPangle'   # 선택
 ```
 
-Google 사용 시 `GADApplicationIdentifier`, 추적을 요청할 경우 `NSUserTrackingUsageDescription`, 사용하는 네트워크의 SKAdNetwork ID가 필요합니다. 최신 목록은 [공식 iOS 설정 가이드](https://napmx.github.io/ios/native/getting-started)를 기준으로 적용하세요. 플러그인과 Core SDK의 Privacy Manifest는 의존성에 포함되지만, 앱과 선택 SDK의 개인정보 선언 책임을 대신하지 않습니다.
+Google 사용 시 `GADApplicationIdentifier`, 추적을 요청할 경우 `NSUserTrackingUsageDescription`, 사용하는 네트워크의 SKAdNetwork ID가 필요합니다. 최신 목록은 [공식 iOS 설정 가이드](https://napmx.github.io/#/ios/native/getting-started)를 기준으로 적용하세요. 플러그인과 Core SDK의 Privacy Manifest는 의존성에 포함되지만, 앱과 선택 SDK의 개인정보 선언 책임을 대신하지 않습니다.
 
 iOS의 Pangle, AppLovin, Unity Ads 등 네트워크별 초기화는 각 공식 가이드에 따라 `AppDelegate`/`SceneDelegate`에서 수행합니다. 개인정보 신호를 먼저 확정한 뒤 네트워크 SDK를 초기화하세요. Android 어댑터는 클래스패스에서 자동 등록되고 필요 시 lazy 초기화됩니다.
 
@@ -234,7 +234,7 @@ Android는 아래 공식 배포 버전을 BOM으로 고정합니다.
 | AdFit / Unity | 2.0.7 | Core 2.3.3 이상, AdFit은 Kotlin 2.0+ |
 | AppLovin | 2.0.7 | Core 2.3.3 이상, API 24+ |
 
-iOS 어댑터와 그 하위 네트워크 SDK의 허용 범위는 릴리스별로 바뀔 수 있으므로 [공식 최신 표](https://napmx.github.io/ios/native/getting-started)를 확인하세요. Core와 어댑터 버전을 임의로 섞지 마세요.
+iOS 어댑터와 그 하위 네트워크 SDK의 허용 범위는 릴리스별로 바뀔 수 있으므로 [공식 최신 표](https://napmx.github.io/#/ios/native/getting-started)를 확인하세요. Core와 어댑터 버전을 임의로 섞지 마세요.
 
 ## 테스트와 검증
 
