@@ -24,7 +24,8 @@ jobs:
         with:
           flutter-version: 3.44.9
           channel: stable
-          cache: true
+          # The persistent runner already retains the SDK and pub cache.
+          cache: false
       - name: Install dependencies
         run: |
           flutter pub get
@@ -58,7 +59,8 @@ jobs:
         with:
           flutter-version: 3.44.9
           channel: stable
-          cache: true
+          # The persistent runner already retains the SDK and pub cache.
+          cache: false
       - name: Install dependencies
         run: |
           flutter config --enable-swift-package-manager
