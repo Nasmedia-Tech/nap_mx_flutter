@@ -6,12 +6,14 @@
 
 최신 네이티브 요구사항은 [nap mx 공식 가이드](https://napmx.github.io/)가 기준입니다. 이 문서의 검증 기준은 다음과 같습니다.
 
+> 아래 네이티브 SDK 업데이트는 다음 Flutter 플러그인 릴리스 대상입니다. 현재 공개 태그 `v0.1.5`에는 Android Core 2.3.0 / iOS Mediation 2.5.0이 포함되어 있습니다. 새 릴리스 태그가 배포된 뒤 설치 `ref`를 갱신하세요.
+
 | 항목 | 고정/검증 버전 |
 |---|---|
 | Flutter CI | 3.44.9 |
-| Android Core | `admixer-ssp:2.3.0` |
-| Android BOM | `admixer-bom:2026.09.03` |
-| iOS Mediation | `AdMixerMediation` 2.5.0 |
+| Android Core | `admixer-ssp:2.4.0` |
+| Android BOM | `admixer-bom:2026.10.04` |
+| iOS Mediation | `AdMixerMediation` 2.5.1 |
 | iOS Core | `AdMixer` 1.3.0 |
 
 ## 1. 시작 전 준비
@@ -100,7 +102,7 @@ const rewardedId = String.fromEnvironment('NAP_MX_REWARDED_ID');
 ```kotlin
 dependencies {
     // nap mx 모듈 버전을 공식 검증 조합으로 정렬합니다.
-    implementation(platform("io.github.nasmedia-tech:admixer-bom:2026.09.03"))
+    implementation(platform("io.github.nasmedia-tech:admixer-bom:2026.10.04"))
 
     // 아래에서 실제 사용하는 네트워크만 남깁니다.
     implementation("io.github.nasmedia-tech:admixer-admanager")       // Google Ad Manager
@@ -117,6 +119,19 @@ dependencies {
 ```
 
 Core만 사용할 때는 위 어댑터 의존성이 필요 없습니다. 모든 어댑터를 편의상 한꺼번에 설치하면 앱 크기, Manifest, 개인정보 선언과 네트워크 초기화 범위가 불필요하게 커집니다.
+
+Google 광고 ID 라이브러리는 Core가 API 21 호환 버전 `play-services-ads-identifier:18.0.0`을 가져옵니다. `18.2.0`은 구형 Android에서 `java.time.Duration` 관련 크래시가 있어 사용하지 마세요. 앱의 `minSdk`가 23 이상이면 Google 수정판 `18.3.0`을 앱 의존성에 추가할 수 있습니다. 최신 AdManager/Naver/GMA NextGen 어댑터는 `18.3.0`을 전이 의존성으로 포함합니다.
+
+```kotlin
+// android/app/build.gradle.kts — minSdk 23 이상인 앱에만 추가
+dependencies {
+    implementation("com.google.android.gms:play-services-ads-identifier:18.3.0")
+}
+```
+
+다른 플러그인을 함께 쓰는 앱은 `./gradlew :app:dependencyInsight --dependency play-services-ads-identifier --configuration releaseRuntimeClasspath`로 최종 버전을 확인하세요. `18.2.0`으로 해석되면 이를 요구하는 의존성을 업데이트하세요. 업데이트할 수 없는 API 21~22 앱은 해당 아티팩트만 `resolutionStrategy.force("com.google.android.gms:play-services-ads-identifier:18.0.0")`로 고정한 뒤 다시 확인합니다.
+
+현재 공개 태그 `v0.1.5`는 광고 ID `18.2.0`을 직접 선언합니다. 이 태그를 유지하는 API 23 이상 앱은 위 `18.3.0` 의존성을 추가하고, API 21~22 앱은 위 `18.0.0` 고정을 적용하세요. 최신 BOM만 추가하는 것으로는 플러그인의 `18.2.0` 직접 선언이 제거되지 않습니다.
 
 `admixer-admanager`를 사용한다면 `play-services-ads`를 25.2.0으로 고정하세요. 공식 Android 가이드는 25.3.0 이상을 비호환으로 명시합니다. Flutter 앱은 다른 광고·분석 플러그인이 같은 아티팩트를 전이 의존으로 끌어오는 경우가 많아, 고정하지 않으면 상위 버전으로 해석될 수 있습니다.
 
@@ -198,7 +213,7 @@ Naver Ad Manager의 `com.naver.gfpsdk.PUBLISHER_CD`는 공식 어댑터에서 �
 | Google Ad Manager, Naver Ad Manager | 23 |
 | AppLovin, GMA NextGen | 24 |
 
-플러그인은 Java 17로 빌드되며 호스트의 AGP·Kotlin 버전을 사용합니다. Android 기준은 AGP 8.10.1 이상(compile SDK 36), Kotlin 2.1.0 이상이며 Kotlin 2.2.10을 권장합니다. SDK 2.3.0은 `kotlin-stdlib:2.2.10`에 의존하므로 stdlib를 호스트 컴파일러 버전으로 강제 낮추지 마세요. 선택 어댑터를 추가하면 해당 어댑터의 Kotlin·AGP 요구사항도 확인해야 합니다.
+플러그인은 Java 17로 빌드되며 호스트의 AGP·Kotlin 버전을 사용합니다. Android 기준은 AGP 8.10.1 이상(compile SDK 36), Kotlin 2.1.0 이상이며 Kotlin 2.2.10을 권장합니다. SDK 2.4.0은 `kotlin-stdlib:2.2.10`에 의존하므로 stdlib를 호스트 컴파일러 버전으로 강제 낮추지 마세요. 선택 어댑터를 추가하면 해당 어댑터의 Kotlin·AGP 요구사항도 확인해야 합니다.
 
 AGP 8 호스트의 `android/settings.gradle.kts`에는 다음처럼 Kotlin 플러그인 버전을 선언합니다(AGP 선언과 Flutter 플러그인 로더 등 기존 설정은 유지).
 
@@ -231,7 +246,7 @@ AGP 9 검증은 Flutter embedding을 제공하는 독립 Android 호스트에서
 ```kotlin
 // android/app/build.gradle.kts
 dependencies {
-    implementation(platform("io.github.nasmedia-tech:admixer-bom:2026.09.03"))
+    implementation(platform("io.github.nasmedia-tech:admixer-bom:2026.10.04"))
     implementation("io.github.nasmedia-tech:admixer-admanager")
 
     // Google SDK 입찰 광고 소스 — play-services-ads 25.2.0 호환 버전
@@ -282,7 +297,7 @@ Android 네이티브 가이드와 마찬가지로 입찰 어댑터를 위한 별
 
 ## 5. iOS 설정
 
-플러그인의 Swift Package는 필수 Mediation 2.5.0과 Core 1.3.0을 함께 가져옵니다. 선택 네트워크 SDK는 매체 앱에서 추가합니다.
+플러그인의 Swift Package는 필수 Mediation 2.5.1과 Core 1.3.0을 함께 가져옵니다. 선택 네트워크 SDK는 매체 앱에서 추가합니다.
 
 ### 5.1 Swift Package Manager
 
