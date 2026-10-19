@@ -47,6 +47,8 @@ final class NapMxFullscreenAdController {
   final Duration loadTimeout;
   final StreamController<NapMxEvent> _events = StreamController.broadcast();
   NapMxAdState _state = NapMxAdState.idle;
+  bool _showRequested = false;
+  Future<void>? _disposing;
 
   /// Unique identifier used to attribute native callbacks to this request.
   String get requestId => _requestId;
@@ -58,6 +60,7 @@ final class NapMxFullscreenAdController {
   Stream<NapMxEvent> get events => _events.stream;
 
   /// Loads one ad and completes after native success or failure.
+  /// Create a new controller for another ad after calling [show].
   ///
   /// [customParams] reach the reward S2S callback. Android forwards them for
   /// every full-screen format; the iOS SDK accepts them only on the rewarded
@@ -68,19 +71,22 @@ final class NapMxFullscreenAdController {
     if (_state == NapMxAdState.loading || _state == NapMxAdState.loaded) {
       throw StateError('This request is already ${_state.name}.');
     }
+    if (_showRequested) {
+      throw StateError('Create a new controller for another full-screen ad.');
+    }
     _state = NapMxAdState.loading;
     try {
       await NapMx.methods
           .invokeMethod<void>('loadFullscreen', <String, Object?>{
         'requestId': _requestId,
         'format': format.wireName,
-        'adUnitId': adUnitId,
+        'adUnitId': adUnitId.trim(),
         'timeoutMs': loadTimeout.inMilliseconds,
         'customParams': customParams,
       });
       if (_state == NapMxAdState.loading) _state = NapMxAdState.loaded;
     } on PlatformException catch (error) {
-      _state = NapMxAdState.failed;
+      if (_state != NapMxAdState.disposed) _state = NapMxAdState.failed;
       throw NapMxError.fromPlatformException(error);
     }
   }
@@ -92,13 +98,14 @@ final class NapMxFullscreenAdController {
       throw StateError('show() requires a successfully loaded ad.');
     }
     _state = NapMxAdState.showing;
+    _showRequested = true;
     try {
       await NapMx.methods.invokeMethod<void>(
         'showFullscreen',
         <String, Object?>{'requestId': _requestId},
       );
     } on PlatformException catch (error) {
-      _state = NapMxAdState.failed;
+      if (_state != NapMxAdState.disposed) _state = NapMxAdState.failed;
       throw NapMxError.fromPlatformException(error);
     }
   }
@@ -109,8 +116,9 @@ final class NapMxFullscreenAdController {
   /// [NapMxEventType.closed] can drop a reward the network reports after the
   /// close callback. Wait for [NapMxEventType.rewarded] or a short grace
   /// period, and treat the S2S callback as the authoritative record.
-  Future<void> dispose() async {
-    if (_state == NapMxAdState.disposed) return;
+  Future<void> dispose() => _disposing ??= _dispose();
+
+  Future<void> _dispose() async {
     _state = NapMxAdState.disposed;
     try {
       await NapMx.methods.invokeMethod<void>(
@@ -129,7 +137,7 @@ final class NapMxFullscreenAdController {
     if (_state == NapMxAdState.disposed) return;
     switch (event.type) {
       case NapMxEventType.loaded:
-        _state = NapMxAdState.loaded;
+        if (_state == NapMxAdState.loading) _state = NapMxAdState.loaded;
       case NapMxEventType.loadFailed || NapMxEventType.showFailed:
         _state = NapMxAdState.failed;
       case NapMxEventType.shown:

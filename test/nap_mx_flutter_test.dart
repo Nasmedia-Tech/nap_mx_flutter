@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nap_mx_flutter/nap_mx_flutter.dart';
@@ -7,6 +11,7 @@ void main() {
   const methods = MethodChannel('nap_mx_flutter/methods');
   const events = MethodChannel('nap_mx_flutter/events');
   final calls = <MethodCall>[];
+  Future<Object?> Function(MethodCall)? handleCall;
   final config = NapMxConfiguration(
     mediaKey: '123',
     adUnitIds: const {
@@ -29,10 +34,11 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(methods, (call) async {
       calls.add(call);
+      if (handleCall != null) return handleCall!(call);
       if (call.method == 'getSdkInfo') {
         return <String, Object?>{
           'platform': 'test',
-          'pluginVersion': '0.1.2',
+          'pluginVersion': '0.1.4',
           'sdkVersion': '2.3.0',
         };
       }
@@ -40,6 +46,11 @@ void main() {
     });
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(events, (_) async => null);
+  });
+
+  tearDown(() {
+    handleCall = null;
+    debugDefaultTargetPlatformOverride = null;
   });
 
   tearDownAll(() {
@@ -257,5 +268,169 @@ void main() {
     await subscription.cancel();
     await rewarded.dispose();
     await interstitial.dispose();
+  });
+
+  for (final format
+      in NapMxAdFormat.values.where((format) => format.isFullscreen)) {
+    test('${format.name} forwards its ID and request parameters', () async {
+      await NapMx.initialize(config);
+      final controller =
+          NapMxFullscreenAdController(format: format, adUnitId: '790');
+      await controller.load(customParams: {'user_id': 'test-member'});
+      final load = calls.lastWhere((call) => call.method == 'loadFullscreen');
+      expect(load.arguments, {
+        'requestId': controller.requestId,
+        'format': format.wireName,
+        'adUnitId': '790',
+        'timeoutMs': 30000,
+        'customParams': {'user_id': 'test-member'},
+      });
+      await controller.show();
+      await expectLater(controller.load(), throwsStateError);
+      await emitNative({'type': 'loaded', 'requestId': controller.requestId});
+      await pumpEventQueue();
+      expect(controller.state, NapMxAdState.showing);
+      await controller.dispose();
+    });
+  }
+
+  for (final operation in ['loadFullscreen', 'showFullscreen']) {
+    test('disposing during $operation stays disposed after cancellation',
+        () async {
+      await NapMx.initialize(config);
+      final pending = Completer<Object?>();
+      final controller = NapMxFullscreenAdController(
+          format: NapMxAdFormat.interstitial, adUnitId: '456');
+      if (operation == 'showFullscreen') await controller.load();
+      handleCall = (call) async {
+        if (call.method == operation) return pending.future;
+        return null;
+      };
+      final action =
+          operation == 'loadFullscreen' ? controller.load() : controller.show();
+      final failure = expectLater(action, throwsA(isA<NapMxError>()));
+      await controller.dispose();
+      pending.completeError(PlatformException(code: 'cancelled'));
+      await failure;
+      expect(controller.state, NapMxAdState.disposed);
+      await expectLater(controller.load(), throwsStateError);
+    });
+  }
+
+  test('every native event preserves its attribution and type', () async {
+    await NapMx.initialize(config);
+    final controller = NapMxFullscreenAdController(
+        format: NapMxAdFormat.rewarded, adUnitId: '789');
+    final received = <NapMxEvent>[];
+    final subscription = controller.events.listen(received.add);
+    await pumpEventQueue();
+    final types = NapMxEventType.values.where((type) =>
+        type != NapMxEventType.disposed && type != NapMxEventType.unknown);
+    for (final type in types) {
+      await emitNative({
+        'type': type.name,
+        'requestId': controller.requestId,
+        'format': 'rewarded',
+        'adUnitId': '789',
+        'network': 'AdMixer',
+        'timestampMs': 1000,
+        'elapsedMs': 25,
+      });
+    }
+    await pumpEventQueue();
+    expect(received.map((event) => event.type), types);
+    expect(
+        received.every((event) =>
+            event.adUnitId == '789' &&
+            event.network == 'AdMixer' &&
+            event.elapsedMilliseconds == 25),
+        isTrue);
+    await subscription.cancel();
+    await controller.dispose();
+  });
+
+  for (final format in [
+    NapMxAdFormat.banner,
+    NapMxAdFormat.native,
+    NapMxAdFormat.inlineVideo
+  ]) {
+    testWidgets('${format.name} auto-load starts after the event subscription',
+        (tester) async {
+      await NapMx.initialize(config);
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      const viewMethods = MethodChannel('nap_mx_flutter/view/42');
+      final received = <NapMxEvent>[];
+      NapMxAdViewController? controller;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(viewMethods, (call) async {
+        if (call.method == 'load') {
+          await emitNative({'type': 'loadStarted', 'viewId': 42});
+          await emitNative({'type': 'loaded', 'viewId': 42});
+        }
+        return null;
+      });
+      await tester.pumpWidget(const SizedBox());
+      final widget = NapMxAdView(
+          format: format,
+          adUnitId: '456',
+          autoLoad: true,
+          onViewCreated: (value) {
+            controller = value;
+            value.events.listen(received.add);
+          });
+      final box =
+          widget.build(tester.element(find.byType(SizedBox))) as SizedBox;
+      final platform = (box.child! as ClipRect).child! as AndroidView;
+      expect((platform.creationParams as Map)['autoLoad'], isFalse);
+      await tester.runAsync(() async {
+        platform.onPlatformViewCreated!(42);
+        await pumpEventQueue();
+        expect(received.map((event) => event.type),
+            [NapMxEventType.loadStarted, NapMxEventType.loaded]);
+        await controller!.dispose();
+      });
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(viewMethods, null);
+      debugDefaultTargetPlatformOverride = null;
+    });
+  }
+  testWidgets('auto-load reports immediate platform errors to its subscriber',
+      (tester) async {
+    await NapMx.initialize(config);
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    const channel = MethodChannel('nap_mx_flutter/view/43');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'load') {
+        throw PlatformException(code: 'invalid_request', message: 'Invalid ID');
+      }
+      return null;
+    });
+    await tester.pumpWidget(const SizedBox());
+    final received = <NapMxEvent>[];
+    NapMxAdViewController? controller;
+    final widget = NapMxAdView(
+        format: NapMxAdFormat.banner,
+        adUnitId: ' 456 ',
+        autoLoad: true,
+        onViewCreated: (value) {
+          controller = value;
+          value.events.listen(received.add);
+        });
+    final box = widget.build(tester.element(find.byType(SizedBox))) as SizedBox;
+    final platform = (box.child! as ClipRect).child! as AndroidView;
+    await tester.runAsync(() async {
+      platform.onPlatformViewCreated!(43);
+      await pumpEventQueue();
+      expect(received.single.type, NapMxEventType.loadFailed);
+      expect(received.single.error?.code, 'invalid_request');
+      expect(received.single.format, NapMxAdFormat.banner);
+      expect(received.single.adUnitId, '456');
+      expect(received.single.viewId, 43);
+      await controller!.dispose();
+    });
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null);
+    debugDefaultTargetPlatformOverride = null;
   });
 }

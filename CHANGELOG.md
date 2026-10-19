@@ -1,3 +1,11 @@
+## Unreleased
+
+- Start inline auto-load after controller event subscriptions are ready.
+- Ignore cancelled inline loads and release late iOS ad responses.
+- Preserve disposed full-screen state, reject reuse after show, and prevent
+  delayed or duplicate load callbacks from disrupting the active ad.
+- Add Android, iOS, and Dart regression coverage for placement lists and callbacks.
+
 ## 0.1.4
 
 - Add `additionalAdUnitIds: List<String>` for multiple placements of any format,

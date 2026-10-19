@@ -841,7 +841,7 @@ try {
 - Android에서는 Flutter Activity가 재생성될 수 있습니다. 플러그인은 새 Activity를 다시 연결하지만, 이전 화면의 controller를 새 화면에서 재사용하지 않는 구성이 안전합니다.
 - iOS에서는 foreground-active Scene의 ViewController가 필요합니다. 앱 시작 전이나 백그라운드에서 전면 광고를 표시하지 않습니다.
 - 화면을 나갈 때 이벤트 구독과 controller를 함께 해제합니다.
-- 화면 재진입 시 새 controller와 새 요청을 만듭니다.
+- 화면 재진입 또는 전면 광고 `show()` 이후 다음 광고에는 새 controller를 만듭니다.
 - 앱 resume 직후 자동으로 광고를 무한 재요청하거나 자동 클릭하지 않습니다.
 - 네트워크 전환, no-fill, timeout 재시도는 지수 backoff와 최대 횟수를 둔 매체 정책으로 관리합니다.
 
