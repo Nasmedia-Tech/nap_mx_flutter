@@ -1,3 +1,12 @@
+## Unreleased
+
+- Correct the Android and iOS plugin version returned by `getSdkInfo` to match
+  the package version, and check native/CocoaPods release metadata in tests.
+- Refresh the example lockfile and Android test dependencies (Mockito 5.24.0,
+  Mockito-Kotlin 6.4.0).
+- Keep the CocoaPods privacy manifest in its resource bundle instead of treating
+  it as a source file, and fix public guide links to use the Docsify route.
+
 ## 0.1.6
 
 - Update Android Core to 2.4.0 and iOS Mediation to 2.5.1; keep iOS Core at

@@ -60,6 +60,6 @@ dependencies {
     // Hosts targeting API 23+ can select 18.3.0; do not reintroduce 18.2.0.
 
     testImplementation("junit:junit:4.13.2")
-    testImplementation("org.mockito:mockito-core:5.14.2")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
+    testImplementation("org.mockito:mockito-core:5.24.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:6.4.0")
 }

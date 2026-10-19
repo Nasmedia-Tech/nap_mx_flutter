@@ -13,7 +13,7 @@ Flutter plugin for the nap mx mobile advertising SDK.
   s.license          = { :type => 'Apache-2.0', :file => '../LICENSE' }
   s.author           = { 'KT Nasmedia' => 'nap_mx@nasmedia.co.kr' }
   s.source           = { :path => '.' }
-  s.source_files = 'nap_mx_flutter/Sources/nap_mx_flutter/**/*'
+  s.source_files = 'nap_mx_flutter/Sources/nap_mx_flutter/**/*.{swift,h,m,mm}'
   s.dependency 'Flutter'
   s.dependency 'AdMixerMediation', '= 2.5.1'
   s.dependency 'AdMixer', '= 1.3.0'

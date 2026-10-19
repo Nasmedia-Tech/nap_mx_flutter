@@ -371,7 +371,7 @@ func sceneDidBecomeActive(_ scene: UIScene) {
 }
 ```
 
-SKAdNetwork 목록은 선택한 네트워크와 버전에 따라 바뀌므로 이 저장소에 정적인 전체 목록을 복사하지 않습니다. 배포 전에 [공식 iOS 설정 가이드](https://napmx.github.io/ios/native/getting-started)의 최신 목록을 앱 `Info.plist`와 대조하세요.
+SKAdNetwork 목록은 선택한 네트워크와 버전에 따라 바뀌므로 이 저장소에 정적인 전체 목록을 복사하지 않습니다. 배포 전에 [공식 iOS 설정 가이드](https://napmx.github.io/#/ios/native/getting-started)의 최신 목록을 앱 `Info.plist`와 대조하세요.
 
 플러그인과 Core의 Privacy Manifest가 앱 선언 전체를 대신하지는 않습니다. 앱이 수집하는 데이터와 선택 네트워크 SDK를 포함해 Xcode Privacy Report를 검토해야 합니다.
 
@@ -844,7 +844,7 @@ try {
 | `mediation_configuration_unsupported` | iOS에서 Android용 mediation 맵을 전달함 |
 | `unsupported_privacy` | Android에서 지원하지 않는 under-age 값을 직접 전달함 |
 
-어댑터 누락을 포함한 네이티브 실패는 보통 `load_failed`와 플랫폼별 `nativeCode`로 전달됩니다. Android의 `0x8000000x` 계열과 iOS의 `-1`부터 `-8` 코드는 각각 [공식 Android](https://napmx.github.io/android/native/error-codes)와 [공식 iOS](https://napmx.github.io/ios/native/getting-started) 오류표를 확인하세요.
+어댑터 누락을 포함한 네이티브 실패는 보통 `load_failed`와 플랫폼별 `nativeCode`로 전달됩니다. Android의 `0x8000000x` 계열과 iOS의 `-1`부터 `-8` 코드는 각각 [공식 Android](https://napmx.github.io/#/android/native/error-codes)와 [공식 iOS](https://napmx.github.io/#/ios/native/getting-started) 오류표를 확인하세요.
 
 ## 13. 화면 및 앱 수명주기
 
