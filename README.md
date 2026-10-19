@@ -17,17 +17,19 @@ Android와 iOS의 [nap mx SDK](https://napmx.github.io/)를 같은 타입 기반
 
 ## 요구사항과 고정 버전
 
+아래 네이티브 버전은 다음 Flutter 플러그인 릴리스에 반영할 개발 버전 기준입니다. 현재 공개 태그 `v0.1.5`는 Android Core 2.3.0 / iOS Mediation 2.5.0을 사용합니다. 새 태그가 배포되기 전까지 설치 예제의 `v0.1.5`만으로 아래 업데이트가 적용되지는 않습니다.
+
 | 항목 | 최소/고정 버전 |
 |---|---|
 | Flutter / Dart | Flutter 3.24+, Dart 3.5+ (CI: Flutter 3.44.9) |
 | Android | API 21+, compile SDK 36, Java 17; AGP 8.10.1+ / Kotlin 2.1.0+ (권장 2.2.10) |
-| nap mx Android | `admixer-ssp:2.3.0` (공식 BOM `2026.09.03`) |
+| nap mx Android | `admixer-ssp:2.4.0` (공식 BOM `2026.10.04`) |
 | iOS | iOS 13+, Xcode 16+, Swift 5.9 |
-| nap mx iOS | `AdMixerMediation` 2.5.0 + `AdMixer` 1.3.0 |
+| nap mx iOS | `AdMixerMediation` 2.5.1 + `AdMixer` 1.3.0 |
 
 선택 어댑터에 따라 최소 OS가 올라갑니다. Android Google/Naver는 API 23, AppLovin/GMA NextGen은 API 24가 필요하고, iOS AdFit/Teads는 iOS 14가 필요합니다. iOS Teads는 Xcode 26 이상이 필요합니다.
 
-Android 플러그인은 호스트의 AGP·Kotlin 버전을 사용합니다. AGP 8 호스트는 `android/settings.gradle(.kts)`에서 `org.jetbrains.kotlin.android`를 버전과 함께 선언하고, 앱 모듈에도 적용하세요. 플러그인 모듈에는 자동으로 적용합니다. 예제와 CI는 AGP 8.10.1 / Gradle 8.11.1에서 Kotlin 2.1.0 및 2.2.10 조합을 검증합니다. SDK 2.3.0의 `kotlin-stdlib` 의존성은 2.2.10이며, 호스트 컴파일러와 별도로 해석됩니다. stdlib를 2.1.0으로 강제 낮추지 마세요.
+Android 플러그인은 호스트의 AGP·Kotlin 버전을 사용합니다. AGP 8 호스트는 `android/settings.gradle(.kts)`에서 `org.jetbrains.kotlin.android`를 버전과 함께 선언하고, 앱 모듈에도 적용하세요. 플러그인 모듈에는 자동으로 적용합니다. 예제와 CI는 AGP 8.10.1 / Gradle 8.11.1에서 Kotlin 2.1.0 및 2.2.10 조합을 검증합니다. SDK 2.4.0의 `kotlin-stdlib` 의존성은 2.2.10이며, 호스트 컴파일러와 별도로 해석됩니다. stdlib를 2.1.0으로 강제 낮추지 마세요.
 
 AGP 9에서 `android.builtInKotlin=false`를 사용하는 호스트도 같은 방식으로 Kotlin 플러그인을 선언해야 합니다. AGP 9의 내장 Kotlin이 활성화된 모듈에는 별도 Kotlin Android 플러그인을 적용하지 않습니다. Flutter 3.44의 AGP 9 연동은 `android.builtInKotlin=false`와 `android.newDsl=false`가 필요하며, 내장 Kotlin을 켠 Flutter 앱은 Flutter 3.47 이상이 필요합니다. 자세한 내용은 [Flutter 공식 가이드](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors)를 확인하세요.
 
@@ -84,13 +86,15 @@ Android 앱의 `android/app/build.gradle.kts` 예시:
 
 ```kotlin
 dependencies {
-    implementation(platform("io.github.nasmedia-tech:admixer-bom:2026.09.03"))
+    implementation(platform("io.github.nasmedia-tech:admixer-bom:2026.10.04"))
     implementation("io.github.nasmedia-tech:admixer-admanager") // 선택
     // implementation("io.github.nasmedia-tech:admixer-pangle") // 선택
 }
 ```
 
 AdFit, Pangle, Teads는 앱의 `android/build.gradle(.kts)` `allprojects` 블록에 각 공식 Maven 저장소를 추가해야 합니다. Google Ad Manager 사용 시 발급받은 앱 ID도 필요합니다.
+
+Google 광고 ID는 Core의 API 21 호환 `18.0.0`을 사용합니다. 앱의 `minSdk`가 23 이상이면 최신 수정판 `18.3.0`을 선택할 수 있습니다. 구형 Android 크래시가 있는 `18.2.0`은 사용하지 마세요. 현재 공개 태그 `v0.1.5`를 유지하는 앱의 별도 설정은 [상세 연동 가이드](doc/integration-guide.md#41-선택-어댑터)를 확인하세요.
 
 ```xml
 <!-- android/app/src/main/AndroidManifest.xml의 application 안 -->
@@ -101,7 +105,7 @@ AdFit, Pangle, Teads는 앱의 `android/build.gradle(.kts)` `allprojects` 블록
 
 플러그인의 consumer R8 규칙과 네이티브 SDK 규칙이 자동 병합됩니다. 선택 네트워크가 별도 규칙을 요구하면 해당 네트워크 공식 가이드를 함께 적용하세요.
 
-iOS는 Flutter Swift Package Manager 또는 CocoaPods를 사용할 수 있습니다. 플러그인은 공식 가이드의 필수 구성인 Mediation 2.5.0과 Core 1.3.0을 고정합니다. 선택 네트워크는 Xcode의 Package Dependencies에 [공식 SPM 패키지](https://napmx.github.io/ios/native/getting-started)를 추가하거나 `Podfile`에 필요한 Pod만 추가합니다.
+iOS는 Flutter Swift Package Manager 또는 CocoaPods를 사용할 수 있습니다. 플러그인은 공식 가이드의 필수 구성인 Mediation 2.5.1과 Core 1.3.0을 고정합니다. 선택 네트워크는 Xcode의 Package Dependencies에 [공식 SPM 패키지](https://napmx.github.io/ios/native/getting-started)를 추가하거나 `Podfile`에 필요한 Pod만 추가합니다.
 
 ```ruby
 pod 'AdMixerMediationGAM'      # 선택
@@ -222,10 +226,12 @@ Android는 아래 공식 배포 버전을 BOM으로 고정합니다.
 
 | 어댑터 | 버전 | 추가 조건 |
 |---|---:|---|
-| AdManager / Naver | 2.1.3 | API 23+, Kotlin 2.1+ |
-| GMA NextGen / Pangle / Teads | 2.1.2 | NextGen은 beta·API 24+, AdManager와 택1 |
-| AdFit / Unity | 2.0.6 | AdFit은 Kotlin 2.0+ |
-| AppLovin | 2.0.5 | API 24+ |
+| AdManager | 2.1.6 | API 23+, Kotlin 2.1+ |
+| Naver / Teads | 2.1.4 | Naver는 API 23+, Kotlin 2.1+ |
+| GMA NextGen | 2.1.5 | beta·API 24+, AdManager와 택1 |
+| Pangle | 2.1.3 | Core 2.3.3 이상 |
+| AdFit / Unity | 2.0.7 | Core 2.3.3 이상, AdFit은 Kotlin 2.0+ |
+| AppLovin | 2.0.7 | Core 2.3.3 이상, API 24+ |
 
 iOS 어댑터와 그 하위 네트워크 SDK의 허용 범위는 릴리스별로 바뀔 수 있으므로 [공식 최신 표](https://napmx.github.io/ios/native/getting-started)를 확인하세요. Core와 어댑터 버전을 임의로 섞지 마세요.
 

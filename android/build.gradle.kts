@@ -55,8 +55,9 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEa
 }
 
 dependencies {
-    implementation("io.github.nasmedia-tech:admixer-ssp:2.3.0")
-    implementation("com.google.android.gms:play-services-ads-identifier:18.2.0")
+    implementation("io.github.nasmedia-tech:admixer-ssp:2.4.0")
+    // The core supplies ads-identifier 18.0.0 for API 21 compatibility.
+    // Hosts targeting API 23+ can select 18.3.0; do not reintroduce 18.2.0.
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-core:5.14.2")

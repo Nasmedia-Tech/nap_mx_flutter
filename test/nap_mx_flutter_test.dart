@@ -39,7 +39,7 @@ void main() {
         return <String, Object?>{
           'platform': 'test',
           'pluginVersion': '0.1.4',
-          'sdkVersion': '2.3.0',
+          'sdkVersion': '2.4.0',
         };
       }
       return null;

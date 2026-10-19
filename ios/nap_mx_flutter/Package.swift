@@ -15,7 +15,7 @@ let package = Package(
         .package(name: "FlutterFramework", path: "../FlutterFramework"),
         .package(
             url: "https://github.com/Nasmedia-Tech/iOS-SSP-Mediation-SPM.git",
-            exact: "2.5.0"
+            exact: "2.5.1"
         ),
         .package(
             url: "https://github.com/Nasmedia-Tech/iOS-SSP-SPM.git",

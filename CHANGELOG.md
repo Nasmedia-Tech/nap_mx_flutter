@@ -1,3 +1,12 @@
+## Unreleased
+
+- Update Android Core to 2.4.0 and iOS Mediation to 2.5.1; keep iOS Core at
+  1.3.0 and align its CocoaPods pin with Swift Package Manager.
+- Remove the direct Google Advertising ID 18.2.0 dependency so the Android
+  core's API 21-compatible 18.0.0 dependency is used. API 23+ hosts can select
+  18.3.0, which fixes the Java Duration crash on older Android versions.
+- Update the Android adapter examples to BOM 2026.10.04.
+
 ## 0.1.5
 
 - Start inline auto-load after controller event subscriptions are ready.
