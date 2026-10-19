@@ -515,12 +515,9 @@ Future<void> initializeAds() async {
     NapMxConfiguration(
       mediaKey: mediaKey,
 
-      // 포맷별 기본 지면 ID입니다. 요청할 때도 ID를 명시해야 합니다.
-      // 같은 포맷의 추가 지면은 additionalAdUnitIds에 모두 등록하세요.
-      adUnitIds: const {
-        NapMxAdFormat.banner: bannerId,
-        NapMxAdFormat.rewarded: rewardedId,
-      },
+      // 사용할 모든 지면 ID를 목록으로 등록합니다(같은 포맷의 여러 지면 포함).
+      // 요청할 때도 controller와 NapMxAdView에 ID를 명시해야 합니다.
+      additionalAdUnitIds: const [bannerId, rewardedId],
       privacy: privacy,
       logLevel: NapMxLogLevel.error,
 
@@ -539,7 +536,7 @@ Future<void> initializeAds() async {
 
 `adUnitIds`는 기존 `Map<NapMxAdFormat, String>` 타입을 유지합니다. 같은 포맷의 지면이 여러 개라면 `additionalAdUnitIds: List<String>`에 추가 ID를 등록하세요. 두 컬렉션을 합쳐 공백을 제거하고 중복 ID를 제거한 뒤 Android와 iOS 네이티브 SDK 초기화에 전달합니다. iOS에서는 추가 ID도 정수 문자열이어야 합니다.
 
-모든 지면을 목록으로 등록하려면 `adUnitIds`를 생략할 수 있습니다.
+권장 방식은 사용할 모든 지면을 `additionalAdUnitIds` 목록으로 등록하고 `adUnitIds`는 생략하는 것입니다.
 
 ```dart
 await NapMx.initialize(NapMxConfiguration(

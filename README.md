@@ -124,11 +124,12 @@ iOS의 Pangle, AppLovin, Unity Ads 등 네트워크별 초기화는 각 공식 �
 await NapMx.initialize(
   NapMxConfiguration(
     mediaKey: 'YOUR_MEDIA_KEY',
-    adUnitIds: {
-      NapMxAdFormat.banner: 'YOUR_BANNER_ID',
-      NapMxAdFormat.interstitial: 'YOUR_INTERSTITIAL_ID',
-      NapMxAdFormat.rewarded: 'YOUR_REWARDED_ID',
-    },
+    // 사용할 모든 지면 ID를 목록으로 등록합니다.
+    additionalAdUnitIds: [
+      'YOUR_BANNER_ID',
+      'YOUR_INTERSTITIAL_ID',
+      'YOUR_REWARDED_ID',
+    ],
     privacy: const NapMxPrivacySettings(
       gdprConsent: NapMxConsentStatus.unspecified,
       usSaleConsent: NapMxConsentStatus.unspecified,

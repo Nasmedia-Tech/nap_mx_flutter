@@ -104,7 +104,7 @@ class _DemoHomeState extends State<DemoHome> {
       await NapMx.initialize(
         NapMxConfiguration(
           mediaKey: _mediaKey.text.trim(),
-          adUnitIds: ids,
+          additionalAdUnitIds: ids.values.toList(),
           privacy: NapMxPrivacySettings(
             gdprConsent: _gdpr,
             usSaleConsent: _usSale,
