@@ -49,6 +49,8 @@ final class NapMx {
   /// Concurrent calls with an equivalent configuration share one operation.
   /// A later call with different values fails instead of silently replacing
   /// SDK state that optional adapters may already have consumed.
+  /// Include all placements up front; this API cannot add IDs after initialization.
+  /// Additional-ID order and duplicates do not affect equivalence.
   static Future<void> initialize(NapMxConfiguration configuration) {
     final existing = _configuration;
     if (existing != null) {
@@ -105,6 +107,10 @@ final class NapMx {
   ) =>
       left.mediaKey == right.mediaKey &&
       mapEquals(left.adUnitIds, right.adUnitIds) &&
+      setEquals(
+        left.additionalAdUnitIds.map((id) => id.trim()).toSet(),
+        right.additionalAdUnitIds.map((id) => id.trim()).toSet(),
+      ) &&
       left.logLevel == right.logLevel &&
       left.testMode == right.testMode &&
       listEquals(left.testDeviceIds, right.testDeviceIds) &&

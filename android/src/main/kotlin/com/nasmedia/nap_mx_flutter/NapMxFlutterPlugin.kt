@@ -56,7 +56,7 @@ class NapMxFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     EventChannel.StreamHandler, ActivityAware {
 
     companion object {
-        private const val PLUGIN_VERSION = "0.1.3"
+        private const val PLUGIN_VERSION = "0.1.4"
 
         /**
          * How long a closed full-screen ad is kept alive so that a reward callback which
@@ -154,8 +154,12 @@ class NapMxFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             "invalid_configuration", "Configuration map is required.", null,
         )
         val mediaKey = (args["mediaKey"] as? String)?.trim().orEmpty()
-        val units = (args["adUnitIds"] as? Map<*, *>)?.values
-            ?.mapNotNull { (it as? String)?.trim()?.takeIf(String::isNotEmpty) }.orEmpty()
+        val rawUnits = (args["adUnitIds"] as? Map<*, *>)?.values.orEmpty().toList() +
+            (args["additionalAdUnitIds"] as? List<*>).orEmpty()
+        if (rawUnits.any { it !is String || it.isBlank() }) return result.error(
+            "invalid_configuration", "Every ad unit ID must be a non-empty string.", null,
+        )
+        val units = rawUnits.map { (it as String).trim() }.distinct()
         if (mediaKey.isEmpty() || units.isEmpty()) return result.error(
             "invalid_configuration", "mediaKey and at least one ad unit ID are required.", null,
         )

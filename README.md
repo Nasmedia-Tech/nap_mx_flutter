@@ -137,6 +137,29 @@ await NapMx.initialize(
 
 Android의 Media Key와 AdUnit ID는 문자열입니다. iOS 네이티브 SDK는 Media Key와 AdUnit ID가 모두 정수이므로 플러그인이 숫자 문자열인지 검사하고 잘못된 값은 `invalid_configuration` 또는 `invalid_ad_unit`으로 실패시킵니다. 중복 초기화는 같은 설정에서만 허용됩니다.
 
+#### 같은 포맷의 여러 지면 등록 (0.1.4)
+
+기존 `adUnitIds` 맵을 유지하면서 `additionalAdUnitIds: List<String>`로 같은 포맷의 추가 지면을 등록할 수 있습니다. 맵을 생략하고 목록만 사용할 수도 있습니다.
+
+```dart
+await NapMx.initialize(NapMxConfiguration(
+  mediaKey: '123', // 실제 발급값으로 교체
+  additionalAdUnitIds: ['789', '790'], // 리워드 지면 A, B의 예시 ID
+));
+final placementB = NapMxFullscreenAdController(
+  format: NapMxAdFormat.rewarded,
+  adUnitId: '790',
+);
+await placementB.load();
+// 화면 수명에 맞춰 placementB.dispose()를 호출하세요.
+```
+
+두 컬렉션을 합쳐 공백과 중복 ID를 제거한 뒤 네이티브 SDK 초기화에 전달합니다. iOS에서는 모든 ID가 정수 문자열이어야 합니다. 두 컬렉션이 모두 비었거나 빈 ID가 포함되면 `ArgumentError`가 발생합니다.
+
+컨트롤러와 광고 뷰에는 사용할 ID를 명시하세요. `adUnitIdFor(format)`은 기존 맵만 조회합니다. 초기화 후 재호출하여 ID를 추가할 수 없으므로 사용할 지면을 처음에 모두 등록해야 합니다. 플러그인은 미등록 ID도 load 시 SDK로 전달하지만 실제 로드 성공 여부는 검증되지 않았습니다.
+
+이 API는 0.1.4 변경사항이며 위 설치 예시의 `v0.1.3`에는 포함되지 않습니다. 0.1.4 릴리스 전 Git 연동으로 사용하려면 이 변경사항이 포함된 커밋을 `ref`로 지정하세요. 자세한 내용은 [다중 지면 등록 가이드](doc/integration-guide.md#61-같은-포맷의-여러-지면-등록-014)를 참고하세요.
+
 ### 4. 배너·네이티브·인라인 동영상
 
 ```dart

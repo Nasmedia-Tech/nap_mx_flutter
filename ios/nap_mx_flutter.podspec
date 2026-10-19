@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'nap_mx_flutter'
-  s.version          = '0.1.3'
+  s.version          = '0.1.4'
   s.summary          = 'Flutter plugin for the nap mx mobile advertising SDK.'
   s.description      = <<-DESC
 Flutter plugin for the nap mx mobile advertising SDK.

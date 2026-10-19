@@ -1,3 +1,15 @@
+## 0.1.4
+
+- Add `additionalAdUnitIds: List<String>` for multiple placements of any format,
+  preserving the existing `adUnitIds` map and default-ID lookup. List-only
+  initialization is supported.
+- Forward combined, deduplicated IDs to Android and iOS initialization;
+  include additional placements in Dart initialization equivalence checks.
+- Fix iOS validation rejecting duplicate IDs registered across formats.
+- Update the Korean README, publisher integration guide, sample documentation,
+  and API comments with registration, explicit placement selection, and
+  reinitialization constraints.
+
 ## 0.1.3
 
 - Fix Android Kotlin compilation on AGP 8 and AGP 9 hosts with built-in

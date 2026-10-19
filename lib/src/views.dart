@@ -79,6 +79,8 @@ class NapMxAdView extends StatelessWidget {
   final NapMxAdFormat format;
 
   /// Android accepts arbitrary SDK string IDs; iOS requires decimal digits.
+  /// Register this placement in the initialization configuration first.
+  /// Multiple views of the same format may use different registered IDs.
   final String adUnitId;
 
   /// Called once the underlying PlatformView and controller are ready.

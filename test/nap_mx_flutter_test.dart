@@ -13,6 +13,7 @@ void main() {
       NapMxAdFormat.interstitial: '456',
       NapMxAdFormat.rewarded: '789',
     },
+    additionalAdUnitIds: const ['790'],
   );
 
   // Delivers one event the way the native EventChannel would.
@@ -66,6 +67,62 @@ void main() {
       ),
       throwsArgumentError,
     );
+  });
+
+  test('additional placements support list-only registration and snapshots',
+      () {
+    final ids = [' 789 ', '790', '790'];
+    final configuration = NapMxConfiguration(
+      mediaKey: '123',
+      additionalAdUnitIds: ids,
+    );
+    ids.clear();
+    expect(configuration.toMap()['adUnitIds'], isEmpty);
+    expect(configuration.toMap()['additionalAdUnitIds'], ['789', '790']);
+    expect(() => configuration.additionalAdUnitIds.add('791'),
+        throwsUnsupportedError);
+    expect(configuration.adUnitIdFor(NapMxAdFormat.rewarded), isNull);
+  });
+
+  test('empty registration and blank additional IDs are rejected', () {
+    expect(() => NapMxConfiguration(mediaKey: '123'), throwsArgumentError);
+    expect(
+      () => NapMxConfiguration(
+        mediaKey: '123',
+        adUnitIds: const {NapMxAdFormat.rewarded: '789'},
+        additionalAdUnitIds: const [' '],
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  test('additional placement changes cannot bypass initialization guard',
+      () async {
+    await NapMx.initialize(config);
+    await NapMx.initialize(NapMxConfiguration(
+      mediaKey: '123',
+      adUnitIds: config.adUnitIds,
+      additionalAdUnitIds: const ['790', '790'],
+    ));
+    await expectLater(
+      NapMx.initialize(NapMxConfiguration(
+        mediaKey: '123',
+        adUnitIds: config.adUnitIds,
+        additionalAdUnitIds: const ['791'],
+      )),
+      throwsStateError,
+    );
+    final initialization =
+        calls.singleWhere((call) => call.method == 'initialize');
+    expect((initialization.arguments as Map)['additionalAdUnitIds'], ['790']);
+    final controller = NapMxFullscreenAdController(
+      format: NapMxAdFormat.rewarded,
+      adUnitId: '790',
+    );
+    await controller.load();
+    final load = calls.lastWhere((call) => call.method == 'loadFullscreen');
+    expect((load.arguments as Map)['adUnitId'], '790');
+    await controller.dispose();
   });
 
   test('events preserve no-fill and reward transaction metadata', () {

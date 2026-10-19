@@ -70,24 +70,32 @@ final class NapMxPrivacySettings {
 enum NapMxLogLevel { none, error, info, debug }
 
 /// Initialization values for one app and one nap mx media key.
+///
+/// Register every placement before initialization using [adUnitIds],
+/// [additionalAdUnitIds], or both. At least one non-empty ID is required.
+/// The native SDK receives their combined, deduplicated values.
 @immutable
 final class NapMxConfiguration {
   NapMxConfiguration({
     required this.mediaKey,
-    required Map<NapMxAdFormat, String> adUnitIds,
+    Map<NapMxAdFormat, String> adUnitIds = const {},
+    List<String> additionalAdUnitIds = const [],
     this.privacy = const NapMxPrivacySettings(),
     this.logLevel = NapMxLogLevel.error,
     this.testMode = false,
     this.testDeviceIds = const <String>[],
     Map<String, Map<String, String>> mediation = const {},
   })  : adUnitIds = Map.unmodifiable(adUnitIds),
+        additionalAdUnitIds = List.unmodifiable(additionalAdUnitIds),
         mediation = Map.unmodifiable(
           mediation.map((key, value) => MapEntry(key, Map.unmodifiable(value))),
         ) {
     if (mediaKey.trim().isEmpty) {
       throw ArgumentError.value(mediaKey, 'mediaKey', 'must not be empty');
     }
-    if (adUnitIds.isEmpty || adUnitIds.values.any((id) => id.trim().isEmpty)) {
+    if ((adUnitIds.isEmpty && additionalAdUnitIds.isEmpty) ||
+        [...adUnitIds.values, ...additionalAdUnitIds]
+            .any((id) => id.trim().isEmpty)) {
       throw ArgumentError.value(
         adUnitIds,
         'adUnitIds',
@@ -101,10 +109,19 @@ final class NapMxConfiguration {
   /// iOS requires decimal digits even though the cross-platform type is String.
   final String mediaKey;
 
-  /// Only the formats this app requests need to be present.
+  /// Optional format-to-ID lookup for the app's default placements.
   ///
-  /// iOS requires every value to contain decimal digits.
+  /// Omit this map when registering all placements in [additionalAdUnitIds].
+  /// Controllers and views still require an explicit ID; they do not select
+  /// defaults automatically. iOS requires decimal integer strings.
   final Map<NapMxAdFormat, String> adUnitIds;
+
+  /// Additional placements registered with the native SDK, without format keys.
+  ///
+  /// May contain multiple IDs of the same format, or all IDs when [adUnitIds]
+  /// is omitted. Pass the desired ID explicitly when loading an ad.
+  /// iOS requires decimal integer strings.
+  final List<String> additionalAdUnitIds;
 
   /// Privacy choices forwarded before nap mx native initialization.
   final NapMxPrivacySettings privacy;
@@ -123,7 +140,9 @@ final class NapMxConfiguration {
   /// iOS rejects non-empty values; initialize iOS network SDKs in the host app.
   final Map<String, Map<String, String>> mediation;
 
-  /// Returns the configured ID for [format], or null when it was not registered.
+  /// Returns the default ID in [adUnitIds] for [format], or null if absent.
+  ///
+  /// Does not search [additionalAdUnitIds] or check native registration.
   String? adUnitIdFor(NapMxAdFormat format) => adUnitIds[format];
 
   Map<String, Object?> toMap() => <String, Object?>{
@@ -132,6 +151,10 @@ final class NapMxConfiguration {
           for (final entry in adUnitIds.entries)
             entry.key.wireName: entry.value.trim(),
         },
+        'additionalAdUnitIds': additionalAdUnitIds
+            .map((id) => id.trim())
+            .toSet()
+            .toList(growable: false),
         'privacy': privacy.toMap(),
         'logLevel': logLevel.name,
         'testMode': testMode,

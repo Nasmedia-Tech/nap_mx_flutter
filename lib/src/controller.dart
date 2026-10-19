@@ -39,6 +39,8 @@ final class NapMxFullscreenAdController {
   final NapMxAdFormat format;
 
   /// Android string ID or an iOS decimal ID represented as a string.
+  /// Register this placement in the initialization configuration first.
+  /// Use a separate controller for each placement of the same format.
   final String adUnitId;
 
   /// Plugin-side upper bound for a native load callback.

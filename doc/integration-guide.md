@@ -500,8 +500,8 @@ Future<void> initializeAds() async {
     NapMxConfiguration(
       mediaKey: mediaKey,
 
-      // 실제로 사용하는 포맷만 등록해도 됩니다.
-      // 등록하지 않은 포맷은 나중에 요청하지 마세요.
+      // 포맷별 기본 지면 ID입니다. 요청할 때도 ID를 명시해야 합니다.
+      // 같은 포맷의 추가 지면은 additionalAdUnitIds에 모두 등록하세요.
       adUnitIds: const {
         NapMxAdFormat.banner: bannerId,
         NapMxAdFormat.rewarded: rewardedId,
@@ -519,6 +519,30 @@ Future<void> initializeAds() async {
 ```
 
 동시에 같은 설정으로 `NapMx.initialize`를 여러 번 호출하면 하나의 초기화 작업을 공유합니다. 이미 다른 설정으로 초기화된 뒤 재호출하면 `StateError`가 발생합니다. 계정 전환처럼 설정을 바꿔야 한다면 앱 프로세스를 새로 시작하는 구조로 설계하세요.
+
+### 6.1 같은 포맷의 여러 지면 등록 (0.1.4)
+
+`adUnitIds`는 기존 `Map<NapMxAdFormat, String>` 타입을 유지합니다. 같은 포맷의 지면이 여러 개라면 `additionalAdUnitIds: List<String>`에 추가 ID를 등록하세요. 두 컬렉션을 합쳐 공백을 제거하고 중복 ID를 제거한 뒤 Android와 iOS 네이티브 SDK 초기화에 전달합니다. iOS에서는 추가 ID도 정수 문자열이어야 합니다.
+
+모든 지면을 목록으로 등록하려면 `adUnitIds`를 생략할 수 있습니다.
+
+```dart
+await NapMx.initialize(NapMxConfiguration(
+  mediaKey: '123', // 실제 발급값으로 교체
+  additionalAdUnitIds: ['789', '790'], // 리워드 지면 A, B의 예시 ID
+));
+
+final placementB = NapMxFullscreenAdController(
+  format: NapMxAdFormat.rewarded,
+  adUnitId: '790',
+);
+await placementB.load();
+// 화면 수명에 맞춰 placementB.dispose()를 호출하세요.
+```
+
+컨트롤러와 `NapMxAdView`에는 사용할 지면 ID를 명시해야 합니다. `adUnitIdFor(format)`은 기존 맵의 값만 조회하며 추가 목록에서 ID를 선택하지 않습니다. 두 컬렉션이 모두 비었거나 빈 ID가 포함되면 `ArgumentError`가 발생합니다.
+
+추가 목록의 순서와 중복은 Dart의 동일 설정 판정에 영향을 주지 않습니다. 초기화 이후 목록을 변경해 재호출하는 방식으로 ID를 추가할 수는 없으므로 사용할 지면을 처음에 모두 등록하세요. 미등록 ID도 load 시 네이티브 SDK로 전달되지만 실제 로드 성공 여부는 검증되지 않았습니다.
 
 초기화 실패는 성공으로 간주하지 말고 광고 기능을 비활성화합니다.
 

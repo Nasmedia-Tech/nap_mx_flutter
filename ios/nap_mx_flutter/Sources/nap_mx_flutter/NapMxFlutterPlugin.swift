@@ -3,7 +3,7 @@ import Flutter
 import UIKit
 
 public final class NapMxFlutterPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
-  private static let pluginVersion = "0.1.3"
+  private static let pluginVersion = "0.1.4"
   private var eventSink: FlutterEventSink?
   private var initialized = false
   private var fingerprint: String?
@@ -63,8 +63,7 @@ public final class NapMxFlutterPlugin: NSObject, FlutterPlugin, FlutterStreamHan
     guard let args = call.arguments as? [String: Any],
           let mediaKeyText = args["mediaKey"] as? String,
           let mediaKey = Int(mediaKeyText),
-          let rawUnits = args["adUnitIds"] as? [String: String],
-          !rawUnits.isEmpty else {
+          let rawUnits = args["adUnitIds"] as? [String: String] else {
       result(FlutterError(
         code: "invalid_configuration",
         message: "iOS requires a numeric mediaKey and at least one numeric ad unit ID.",
@@ -72,9 +71,16 @@ public final class NapMxFlutterPlugin: NSObject, FlutterPlugin, FlutterStreamHan
       ))
       return
     }
-    let unitValues = rawUnits.values.sorted()
-    let numericUnits = Set(unitValues.compactMap(Int.init))
-    guard numericUnits.count == unitValues.count else {
+    guard args["additionalAdUnitIds"] == nil || args["additionalAdUnitIds"] is [String] else {
+      result(FlutterError(code: "invalid_configuration", message: "additionalAdUnitIds must be a list of strings.", details: nil))
+      return
+    }
+    let additionalUnits = args["additionalAdUnitIds"] as? [String] ?? []
+    let unitValues = Set((Array(rawUnits.values) + additionalUnits).map {
+      $0.trimmingCharacters(in: .whitespacesAndNewlines)
+    }).sorted()
+    let parsedUnits = unitValues.compactMap(Int.init)
+    guard !unitValues.isEmpty, parsedUnits.count == unitValues.count else {
       result(FlutterError(
         code: "invalid_ad_unit",
         message: "Every iOS ad unit ID must be a base-10 integer.",
@@ -82,6 +88,7 @@ public final class NapMxFlutterPlugin: NSObject, FlutterPlugin, FlutterStreamHan
       ))
       return
     }
+    let numericUnits = Set(parsedUnits)
     if args["testMode"] as? Bool == true {
       result(FlutterError(
         code: "test_mode_unsupported",
