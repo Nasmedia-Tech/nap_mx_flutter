@@ -6,7 +6,7 @@
 
 최신 네이티브 요구사항은 [nap mx 공식 가이드](https://napmx.github.io/)가 기준입니다. 이 문서의 검증 기준은 다음과 같습니다.
 
-> 아래 네이티브 SDK 버전은 `v0.1.6` 기준입니다. 이전 태그 `v0.1.5`에는 Android Core 2.3.0 / iOS Mediation 2.5.0이 포함되어 있습니다.
+> 아래 네이티브 SDK 버전은 `v0.1.6` 기준입니다.
 
 | 항목 | 고정/검증 버전 |
 |---|---|
@@ -130,8 +130,6 @@ dependencies {
 ```
 
 다른 플러그인을 함께 쓰는 앱은 `./gradlew :app:dependencyInsight --dependency play-services-ads-identifier --configuration releaseRuntimeClasspath`로 최종 버전을 확인하세요. `18.2.0`으로 해석되면 이를 요구하는 의존성을 업데이트하세요. 업데이트할 수 없는 API 21~22 앱은 해당 아티팩트만 `resolutionStrategy.force("com.google.android.gms:play-services-ads-identifier:18.0.0")`로 고정한 뒤 다시 확인합니다.
-
-`v0.1.5`는 광고 ID `18.2.0`을 직접 선언합니다. 이 태그를 유지하는 API 23 이상 앱은 위 `18.3.0` 의존성을 추가하고, API 21~22 앱은 위 `18.0.0` 고정을 적용하세요. 최신 BOM만 추가하는 것으로는 플러그인의 `18.2.0` 직접 선언이 제거되지 않습니다. `v0.1.6`부터는 이 직접 선언이 없습니다.
 
 `admixer-admanager`를 사용한다면 `play-services-ads`를 25.2.0으로 고정하세요. 공식 Android 가이드는 25.3.0 이상을 비호환으로 명시합니다. Flutter 앱은 다른 광고·분석 플러그인이 같은 아티팩트를 전이 의존으로 끌어오는 경우가 많아, 고정하지 않으면 상위 버전으로 해석될 수 있습니다.
 

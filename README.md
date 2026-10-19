@@ -17,7 +17,7 @@ Android와 iOS의 [nap mx SDK](https://napmx.github.io/)를 같은 타입 기반
 
 ## 요구사항과 고정 버전
 
-아래 네이티브 버전은 `v0.1.6` 기준입니다. 이전 태그 `v0.1.5`는 Android Core 2.3.0 / iOS Mediation 2.5.0을 사용합니다.
+아래 네이티브 버전은 `v0.1.6` 기준입니다.
 
 | 항목 | 최소/고정 버전 |
 |---|---|
@@ -94,7 +94,7 @@ dependencies {
 
 AdFit, Pangle, Teads는 앱의 `android/build.gradle(.kts)` `allprojects` 블록에 각 공식 Maven 저장소를 추가해야 합니다. Google Ad Manager 사용 시 발급받은 앱 ID도 필요합니다.
 
-Google 광고 ID는 Core의 API 21 호환 `18.0.0`을 사용합니다. 앱의 `minSdk`가 23 이상이면 최신 수정판 `18.3.0`을 선택할 수 있습니다. 구형 Android 크래시가 있는 `18.2.0`은 사용하지 마세요. `v0.1.5`를 유지하는 앱의 별도 설정은 [상세 연동 가이드](doc/integration-guide.md#41-선택-어댑터)를 확인하세요.
+Google 광고 ID는 Core의 API 21 호환 `18.0.0`을 사용합니다. 앱의 `minSdk`가 23 이상이면 최신 수정판 `18.3.0`을 선택할 수 있습니다. 구형 Android 크래시가 있는 `18.2.0`은 사용하지 마세요.
 
 ```xml
 <!-- android/app/src/main/AndroidManifest.xml의 application 안 -->
