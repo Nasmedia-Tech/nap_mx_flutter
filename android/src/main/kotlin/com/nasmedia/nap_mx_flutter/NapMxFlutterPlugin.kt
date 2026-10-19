@@ -274,10 +274,9 @@ class NapMxFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         private var network: String? = null
         private var ad: Any? = null
         private var state = "loading"
+        // failLoad ignores a timeout that fires after the request settled.
         private val timeout = Runnable {
-            if (state == "loading" && !finished.get()) {
-                failLoad("timeout", "Plugin load timeout.", AdMixer.AX_ERR_TIMEOUT)
-            }
+            failLoad("timeout", "Plugin load timeout.", AdMixer.AX_ERR_TIMEOUT)
         }
 
         init { mainHandler.postDelayed(timeout, timeoutMs) }
