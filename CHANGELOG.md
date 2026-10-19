@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.5
 
 - Start inline auto-load after controller event subscriptions are ready.
 - Ignore cancelled inline loads and release late iOS ad responses.
