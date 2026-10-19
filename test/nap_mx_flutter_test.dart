@@ -107,6 +107,44 @@ void main() {
     );
   });
 
+  // Must run before any test initializes the process-wide SDK.
+  testWidgets('auto-load before initialization reports instead of throwing',
+      (tester) async {
+    expect(NapMx.isInitialized, isFalse);
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    const channel = MethodChannel('nap_mx_flutter/view/44');
+    final viewCalls = <String>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      viewCalls.add(call.method);
+      return null;
+    });
+    await tester.pumpWidget(const SizedBox());
+    final received = <NapMxEvent>[];
+    NapMxAdViewController? controller;
+    final widget = NapMxAdView(
+        format: NapMxAdFormat.banner,
+        adUnitId: '456',
+        autoLoad: true,
+        onViewCreated: (value) {
+          controller = value;
+          value.events.listen(received.add);
+        });
+    final box = widget.build(tester.element(find.byType(SizedBox))) as SizedBox;
+    final platform = (box.child! as ClipRect).child! as AndroidView;
+    await tester.runAsync(() async {
+      platform.onPlatformViewCreated!(44);
+      await pumpEventQueue();
+      expect(received.single.type, NapMxEventType.loadFailed);
+      expect(received.single.error?.code, 'not_initialized');
+      expect(viewCalls, isEmpty);
+      await controller!.dispose();
+    });
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   test('additional placement changes cannot bypass initialization guard',
       () async {
     await NapMx.initialize(config);
@@ -432,5 +470,80 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null);
     debugDefaultTargetPlatformOverride = null;
+  });
+  testWidgets('a host load in onViewCreated replaces auto-load',
+      (tester) async {
+    await NapMx.initialize(config);
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    const channel = MethodChannel('nap_mx_flutter/view/45');
+    final viewCalls = <String>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      viewCalls.add(call.method);
+      return null;
+    });
+    await tester.pumpWidget(const SizedBox());
+    final received = <NapMxEvent>[];
+    NapMxAdViewController? controller;
+    final widget = NapMxAdView(
+        format: NapMxAdFormat.banner,
+        adUnitId: '456',
+        autoLoad: true,
+        onViewCreated: (value) {
+          controller = value;
+          value.events.listen(received.add);
+          unawaited(value.load());
+        });
+    final box = widget.build(tester.element(find.byType(SizedBox))) as SizedBox;
+    final platform = (box.child! as ClipRect).child! as AndroidView;
+    await tester.runAsync(() async {
+      platform.onPlatformViewCreated!(45);
+      await pumpEventQueue();
+      expect(viewCalls, ['load']);
+      expect(received, isEmpty);
+      await controller!.dispose();
+    });
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  test('a show rejected before presenting keeps the ad retryable', () async {
+    await NapMx.initialize(config);
+    var rejectShow = true;
+    handleCall = (call) async {
+      if (call.method == 'showFullscreen' && rejectShow) {
+        throw PlatformException(code: 'no_activity', message: 'No Activity');
+      }
+      return null;
+    };
+    final controller = NapMxFullscreenAdController(
+      format: NapMxAdFormat.rewarded,
+      adUnitId: '789',
+    );
+    await controller.load();
+    await expectLater(controller.show(), throwsA(isA<NapMxError>()));
+    expect(controller.state, NapMxAdState.loaded);
+    rejectShow = false;
+    await controller.show();
+    expect(controller.state, NapMxAdState.showing);
+    await controller.dispose();
+  });
+
+  test('a repeated dispose after a native failure completes', () async {
+    await NapMx.initialize(config);
+    handleCall = (call) async {
+      if (call.method == 'disposeFullscreen') {
+        throw PlatformException(code: 'detached', message: 'Engine detached');
+      }
+      return null;
+    };
+    final controller = NapMxFullscreenAdController(
+      format: NapMxAdFormat.interstitial,
+      adUnitId: '456',
+    );
+    await expectLater(controller.dispose(), throwsA(isA<NapMxError>()));
+    await controller.dispose();
+    expect(controller.state, NapMxAdState.disposed);
   });
 }

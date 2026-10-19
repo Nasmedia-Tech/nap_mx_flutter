@@ -32,6 +32,10 @@ final class NapMxFullscreenAdController {
   }
 
   static int _sequence = 0;
+
+  // Show rejections that leave the native ad loaded and retryable.
+  static const _showPreconditionCodes = {'no_activity', 'no_view_controller'};
+
   late final String _requestId;
   late final StreamSubscription<NapMxEvent> _subscription;
 
@@ -105,7 +109,15 @@ final class NapMxFullscreenAdController {
         <String, Object?>{'requestId': _requestId},
       );
     } on PlatformException catch (error) {
-      if (_state != NapMxAdState.disposed) _state = NapMxAdState.failed;
+      if (_state != NapMxAdState.disposed) {
+        // Native rejected the show before presenting; the ad stays loaded.
+        if (_showPreconditionCodes.contains(error.code)) {
+          _state = NapMxAdState.loaded;
+          _showRequested = false;
+        } else {
+          _state = NapMxAdState.failed;
+        }
+      }
       throw NapMxError.fromPlatformException(error);
     }
   }
@@ -116,7 +128,13 @@ final class NapMxFullscreenAdController {
   /// [NapMxEventType.closed] can drop a reward the network reports after the
   /// close callback. Wait for [NapMxEventType.rewarded] or a short grace
   /// period, and treat the S2S callback as the authoritative record.
-  Future<void> dispose() => _disposing ??= _dispose();
+  ///
+  /// Only the first call reports a native failure; later calls complete.
+  Future<void> dispose() {
+    final pending = _disposing;
+    if (pending != null) return pending.catchError((Object _) {});
+    return _disposing = _dispose();
+  }
 
   Future<void> _dispose() async {
     _state = NapMxAdState.disposed;
