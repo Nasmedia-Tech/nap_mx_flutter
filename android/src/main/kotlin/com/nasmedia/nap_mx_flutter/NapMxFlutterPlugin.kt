@@ -274,10 +274,9 @@ class NapMxFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         private var network: String? = null
         private var ad: Any? = null
         private var state = "loading"
+        // failLoad ignores a timeout that fires after the request settled.
         private val timeout = Runnable {
-            if (state == "loading" && !finished.get()) {
-                failLoad("timeout", "Plugin load timeout.", AdMixer.AX_ERR_TIMEOUT)
-            }
+            failLoad("timeout", "Plugin load timeout.", AdMixer.AX_ERR_TIMEOUT)
         }
 
         init { mainHandler.postDelayed(timeout, timeoutMs) }
@@ -322,7 +321,7 @@ class NapMxFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
 
         private fun loaded(adapterName: String, loadedAd: Any) {
             if (finished.get() || state != "loading") {
-                stopAd(loadedAd)
+                if (loadedAd !== ad) stopAd(loadedAd)
                 return
             }
             mainHandler.removeCallbacks(timeout)
@@ -410,7 +409,7 @@ class NapMxFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         }
 
         private fun failLoad(code: String, message: String, nativeCode: Int) {
-            if (finished.getAndSet(true)) return
+            if (state != "loading" || finished.getAndSet(true)) return
             mainHandler.removeCallbacks(timeout)
             state = "failed"
             stopAd(ad)
@@ -501,21 +500,28 @@ internal class NapMxPlatformAdView(
      * [java.lang.ref.WeakReference], so an anonymous listener scoped to [load] would be
      * collectible and the banner would silently stop reporting events.
      */
-    private val adListener = object : AdListener() {
-        override fun onReceivedAd(type: AdNetworkType, view: Any) {
-            loading = false; emitEvent("loaded", type.adapterName)
-        }
+    private var adListener: AdListener? = null
+    private var generation = 0
 
-        @Suppress("DEPRECATION")
-        override fun onReceivedAd(name: String, view: Any) { loading = false; emitEvent("loaded", name) }
-        override fun onFailedToReceiveAd(code: Int, message: String?) {
-            loading = false; emitError("load_failed", message ?: "Ad load failed.", code)
+    private fun listenerFor(token: Int): AdListener = object : AdListener() {
+        private fun isCurrent() = !disposed && token == generation
+        override fun onReceivedAd(type: AdNetworkType, view: Any) {
+            if (isCurrent()) { loading = false; emitEvent("loaded", type.adapterName) }
         }
-        override fun onAdDisplayed() = emitEvent("shown")
-        override fun onAdClicked() = emitEvent("clicked")
-        override fun onAdClosed() = emitEvent("closed")
-        override fun onAdCompleted() = emitEvent("completed")
-        override fun onAdSkipped() = emitEvent("skipped")
+        @Suppress("DEPRECATION")
+        override fun onReceivedAd(name: String, view: Any) {
+            if (isCurrent()) { loading = false; emitEvent("loaded", name) }
+        }
+        override fun onFailedToReceiveAd(code: Int, message: String?) {
+            if (isCurrent()) {
+                loading = false; emitError("load_failed", message ?: "Ad load failed.", code)
+            }
+        }
+        override fun onAdDisplayed() { if (isCurrent()) emitEvent("shown") }
+        override fun onAdClicked() { if (isCurrent()) emitEvent("clicked") }
+        override fun onAdClosed() { if (isCurrent()) emitEvent("closed") }
+        override fun onAdCompleted() { if (isCurrent()) emitEvent("completed") }
+        override fun onAdSkipped() { if (isCurrent()) emitEvent("skipped") }
     }
 
     init {
@@ -534,6 +540,9 @@ internal class NapMxPlatformAdView(
     private fun load() {
         if (disposed || loading) return
         if (adUnitId.isBlank()) { emitError("invalid_ad_unit", "adUnitId must not be empty.", null); return }
+        generation++
+        stopCurrent()
+        adListener = listenerFor(generation)
         loading = true; startedAt = System.currentTimeMillis(); emitEvent("loadStarted")
         val hostContext = activityProvider() ?: container.context
         val infoBuilder = AdInfo.Builder(adUnitId).setMute(muted)
@@ -555,7 +564,7 @@ internal class NapMxPlatformAdView(
             "inlineVideo" -> AMMVideoView(hostContext).apply { setAdInfo(info); setAdViewListener(adListener) }
             else -> { loading = false; emitError("unsupported", "Unsupported view format: $format", null); return }
         }
-        stopCurrent(); adView = created; container.removeAllViews()
+        adView = created; container.removeAllViews()
         container.addView(created, FrameLayout.LayoutParams(-1, -1))
         when (created) {
             is AMMBannerView -> created.loadAd()
@@ -589,10 +598,15 @@ internal class NapMxPlatformAdView(
         adView = null; container.removeAllViews()
     }
     private fun release(final: Boolean) {
-        loading = false; stopCurrent()
+        if (disposed) return
+        generation++
+        loading = false
+        disposed = final
+        stopCurrent()
+        adListener = null
         if (final) {
             liveViews.remove(this)
-            disposed = true; channel.setMethodCallHandler(null); emitEvent("disposed")
+            channel.setMethodCallHandler(null); emitEvent("disposed")
         } else emitEvent("cancelled")
     }
     override fun dispose() = release(true)

@@ -2,6 +2,11 @@ package com.nasmedia.nap_mx_flutter
 
 import android.app.Activity
 import android.app.Application
+import com.nasmedia.admixerssp.common.AdMixer
+import com.nasmedia.admixerssp.common.AdMixerLog
+import io.flutter.plugin.common.MethodCall
+import io.flutter.plugin.common.MethodChannel
+import org.mockito.Mockito.mockStatic
 import com.nasmedia.admixerssp.ads.AdListener
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -121,6 +126,27 @@ class NapMxFlutterPluginTest {
             listenerFields.size,
         )
         assertNotNull(listenerFields.single())
+    }
+
+    @Test
+    fun `initialization passes list-only and mixed placements as deduplicated native lists`() {
+        for (defaults in listOf(emptyMap(), mapOf("banner" to "456", "native" to "456"))) {
+            setUp()
+            attach()
+            val sdk = mock<AdMixer>()
+            mockStatic(AdMixer::class.java).use { statics ->
+                mockStatic(AdMixerLog::class.java).use {
+                    statics.`when`<AdMixer> { AdMixer.getInstance() }.thenReturn(sdk)
+                    val result = mock<MethodChannel.Result>()
+                    plugin.onMethodCall(MethodCall("initialize", mapOf(
+                        "mediaKey" to " 123 ", "adUnitIds" to defaults,
+                        "additionalAdUnitIds" to listOf(" 456 ", "789", "789"),
+                    )), result)
+                    verify(sdk).initialize(application, "123", arrayListOf("456", "789"))
+                    verify(result).success(null)
+                }
+            }
+        }
     }
 
     private fun attach() = plugin.onAttachedToEngine(binding)

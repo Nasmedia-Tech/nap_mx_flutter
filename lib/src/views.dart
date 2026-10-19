@@ -12,9 +12,10 @@ import 'nap_mx.dart';
 final class NapMxAdViewController {
   NapMxAdViewController._(this.viewId) {
     _channel = MethodChannel('nap_mx_flutter/view/$viewId');
-    _subscription = NapMx.events
-        .where((event) => event.viewId == viewId)
-        .listen(_events.add);
+    _subscription =
+        NapMx.events.where((event) => event.viewId == viewId).listen((event) {
+      if (!_disposed) _events.add(event);
+    });
   }
 
   final int viewId;
@@ -22,19 +23,31 @@ final class NapMxAdViewController {
   late final StreamSubscription<NapMxEvent> _subscription;
   final StreamController<NapMxEvent> _events = StreamController.broadcast();
   bool _disposed = false;
+  bool _loadRequested = false;
+  Future<void>? _disposing;
 
   /// Events filtered to this PlatformView's [viewId].
   Stream<NapMxEvent> get events => _events.stream;
 
   /// Starts one native ad load for this view.
-  Future<void> load() => _invoke('load');
+  Future<void> load() {
+    _loadRequested = true;
+    return _invoke('load');
+  }
 
   /// Cancels the current native load while keeping the view reusable.
   Future<void> cancel() => _invoke('cancel');
 
   /// Releases native views, callbacks, and the filtered event stream.
-  Future<void> dispose() async {
-    if (_disposed) return;
+  ///
+  /// Only the first call reports a native failure; later calls complete.
+  Future<void> dispose() {
+    final pending = _disposing;
+    if (pending != null) return pending.catchError((Object _) {});
+    return _disposing = _dispose();
+  }
+
+  Future<void> _dispose() async {
     _disposed = true;
     try {
       await _channel.invokeMethod<void>('dispose');
@@ -55,6 +68,35 @@ final class NapMxAdViewController {
       await _channel.invokeMethod<void>(method);
     } on PlatformException catch (error) {
       throw NapMxError.fromPlatformException(error);
+    }
+  }
+
+  Future<void> _autoLoad(NapMxAdFormat format, String adUnitId) async {
+    // The host already started a load from onViewCreated.
+    if (_loadRequested) return;
+    NapMxError? failure;
+    if (!NapMx.isInitialized) {
+      failure = const NapMxError(
+        code: 'not_initialized',
+        message: 'Call NapMx.initialize before loading an ad view.',
+      );
+    } else {
+      try {
+        await load();
+      } on NapMxError catch (error) {
+        // A concurrent host load owns the result; this is not a failure.
+        if (error.code != 'already_loading') failure = error;
+      }
+    }
+    if (failure != null && !_disposed) {
+      _events.add(NapMxEvent(
+        type: NapMxEventType.loadFailed,
+        timestamp: DateTime.now(),
+        viewId: viewId,
+        format: format,
+        adUnitId: adUnitId.trim(),
+        error: failure,
+      ));
     }
   }
 }
@@ -92,7 +134,11 @@ class NapMxAdView extends StatelessWidget {
   /// Optional slot height; use a bounded value that preserves ad assets.
   final double? height;
 
-  /// Whether the native view should load immediately after creation.
+  /// Whether to load after [onViewCreated] can subscribe to events.
+  ///
+  /// Skipped when [onViewCreated] calls [NapMxAdViewController.load] itself.
+  /// Before initialization completes, a `not_initialized` loadFailed event
+  /// is emitted instead of loading.
   final bool autoLoad;
 
   /// Requested initial mute state for video formats when supported by the SDK.
@@ -108,8 +154,9 @@ class NapMxAdView extends StatelessWidget {
     };
     final params = <String, Object?>{
       'format': format.wireName,
-      'adUnitId': adUnitId,
-      'autoLoad': autoLoad,
+      'adUnitId': adUnitId.trim(),
+      // Native creation precedes the controller and its event subscription.
+      'autoLoad': false,
       'muted': muted,
     };
     final view = switch (defaultTargetPlatform) {
@@ -142,5 +189,8 @@ class NapMxAdView extends StatelessWidget {
   void _created(int id) {
     final controller = NapMxAdViewController._(id);
     onViewCreated(controller);
+    if (autoLoad && !controller._disposed) {
+      unawaited(controller._autoLoad(format, adUnitId));
+    }
   }
 }

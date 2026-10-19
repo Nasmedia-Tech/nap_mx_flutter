@@ -8,6 +8,17 @@ public final class NapMxFlutterPlugin: NSObject, FlutterPlugin, FlutterStreamHan
   private var initialized = false
   private var fingerprint: String?
   private var requests: [String: NapMxFullscreenRequest] = [:]
+  private let initializeSdk: (Int, Set<Int>) -> Void
+
+  public override init() {
+    initializeSdk = { AMMediation.shared.initialize(mediaKey: $0, adunitID: $1) }
+    super.init()
+  }
+
+  init(initializeSdk: @escaping (Int, Set<Int>) -> Void) {
+    self.initializeSdk = initializeSdk
+    super.init()
+  }
 
   public static func register(with registrar: FlutterPluginRegistrar) {
     let instance = NapMxFlutterPlugin()
@@ -128,7 +139,7 @@ public final class NapMxFlutterPlugin: NSObject, FlutterPlugin, FlutterStreamHan
     }
     let logLevel = args["logLevel"] as? String
     AMMediation.shared.setDebugEnabled(isEnabled: logLevel == "debug")
-    AMMediation.shared.initialize(mediaKey: mediaKey, adunitID: numericUnits)
+    initializeSdk(mediaKey, numericUnits)
     initialized = true
     fingerprint = newFingerprint
     result(nil)
@@ -210,7 +221,7 @@ public final class NapMxFlutterPlugin: NSObject, FlutterPlugin, FlutterStreamHan
   }
 }
 
-private final class NapMxFullscreenRequest: NSObject,
+final class NapMxFullscreenRequest: NSObject,
     AMMInterstitialDelegate, AMMVideoInterstitialDelegate, AMMRewardVideoDelegate {
   /// How long a closed ad is kept alive so that a reward callback which the network
   /// delivers after the close callback can still reach the app.
@@ -267,7 +278,8 @@ private final class NapMxFullscreenRequest: NSObject,
     case "interstitial":
       AMMInterstitial.loadAd(adUnitID: adUnitId, config: AMMInterstitialConfig()) {
         [weak self] ad, adapterType, error in
-        guard let self else { return }
+        guard let self else { ad?.stop(); return }
+        guard self.acceptsLoad(ad, current: self.interstitial, stop: { ad?.stop() }) else { return }
         if let error { self.failLoad(error: error); return }
         guard let ad else { self.failLoad(code: "load_failed", message: "SDK returned no ad.", nativeCode: -1); return }
         self.interstitial = ad
@@ -276,7 +288,8 @@ private final class NapMxFullscreenRequest: NSObject,
       }
     case "interstitialVideo":
       AMMVideoInterstitial.loadAd(adUnitID: adUnitId) { [weak self] ad, adapterType, error in
-        guard let self else { return }
+        guard let self else { ad?.stop(); return }
+        guard self.acceptsLoad(ad, current: self.video, stop: { ad?.stop() }) else { return }
         if let error { self.failLoad(error: error); return }
         guard let ad else { self.failLoad(code: "load_failed", message: "SDK returned no ad.", nativeCode: -1); return }
         self.video = ad
@@ -286,7 +299,8 @@ private final class NapMxFullscreenRequest: NSObject,
     case "rewarded":
       AMMRewardVideo.loadAd(adUnitID: adUnitId, customParam: customParams) {
         [weak self] ad, adapterType, error in
-        guard let self else { return }
+        guard let self else { ad?.stop(); return }
+        guard self.acceptsLoad(ad, current: self.reward, stop: { ad?.stop() }) else { return }
         if let error { self.failLoad(error: error); return }
         guard let ad else { self.failLoad(code: "load_failed", message: "SDK returned no ad.", nativeCode: -1); return }
         self.reward = ad
@@ -297,8 +311,16 @@ private final class NapMxFullscreenRequest: NSObject,
     }
   }
 
+  /// Whether a load completion still belongs to this request.
+  /// A stale ad that is not the retained one is stopped.
+  private func acceptsLoad(_ ad: AnyObject?, current: AnyObject?, stop: () -> Void) -> Bool {
+    guard disposed || state != "loading" else { return true }
+    if ad !== current { stop() }
+    return false
+  }
+
+  // Load completions gate on acceptsLoad before calling this.
   private func loaded(network: String) {
-    guard !disposed, state == "loading" else { dispose(notify: false); return }
     timeoutWork?.cancel()
     timeoutWork = nil
     self.network = network
@@ -500,7 +522,24 @@ private final class NapMxAdViewFactory: NSObject, FlutterPlatformViewFactory {
   }
 }
 
-private final class NapMxPlatformAdView: NSObject, FlutterPlatformView,
+// Injectable SDK entry points keep cancellation tests independent of ad inventory.
+struct NapMxAdViewLoaders {
+  typealias BannerCompletion = (AMMBannerView?, AdNetworkType, Error?) -> Void
+  typealias VideoCompletion = (AMMVideoView?, AdNetworkType, Error?) -> Void
+  typealias NativeCompletion = (AMMNativeAdViewContainer?, AdNetworkType, Error?) -> Void
+
+  var banner: (Int, UIViewController, @escaping BannerCompletion) -> Void = {
+    AMMBannerView.loadAd(adUnitID: $0, rootViewController: $1, completion: $2)
+  }
+  var video: (Int, UIViewController, @escaping VideoCompletion) -> Void = {
+    AMMVideoView.loadAd(adUnitID: $0, rootViewController: $1, completion: $2)
+  }
+  var native: (Int, UIViewController, AMMNativeAdView, @escaping NativeCompletion) -> Void = {
+    AMMNativeAdViewContainer.loadAd(adUnitID: $0, rootViewController: $1, nativeAdView: $2, completion: $3)
+  }
+}
+
+final class NapMxPlatformAdView: NSObject, FlutterPlatformView,
     AMMBannerViewDelegate, AMMVideoViewDelegate, AMMNativeDelegate {
   private let container: UIView
   private let viewId: Int64
@@ -508,20 +547,27 @@ private final class NapMxPlatformAdView: NSObject, FlutterPlatformView,
   private let adUnitText: String
   private let emitBlock: ([String: Any]) -> Void
   private let channel: FlutterMethodChannel
+  private let loaders: NapMxAdViewLoaders
+  private let rootViewController: () -> UIViewController?
   private var startedAt = Date()
   private var banner: AMMBannerView?
   private var video: AMMVideoView?
   private var native: AMMNativeAdViewContainer?
   private var disposed = false
   private var loading = false
+  private var generation = 0
 
   init(
     frame: CGRect,
     viewId: Int64,
     args: [String: Any],
     messenger: FlutterBinaryMessenger,
-    emit: @escaping ([String: Any]) -> Void
+    emit: @escaping ([String: Any]) -> Void,
+    loaders: NapMxAdViewLoaders = NapMxAdViewLoaders(),
+    rootViewController: @escaping () -> UIViewController? = activeViewController
   ) {
+    self.loaders = loaders
+    self.rootViewController = rootViewController
     container = UIView(frame: frame)
     self.viewId = viewId
     format = args["format"] as? String ?? ""
@@ -546,7 +592,7 @@ private final class NapMxPlatformAdView: NSObject, FlutterPlatformView,
   private func load(result: @escaping FlutterResult) {
     guard !disposed else { result(FlutterError(code: "disposed", message: nil, details: nil)); return }
     guard !loading else { result(FlutterError(code: "already_loading", message: nil, details: nil)); return }
-    guard let adUnitId = Int(adUnitText), let root = activeViewController() else {
+    guard let adUnitId = Int(adUnitText), let root = rootViewController() else {
       result(FlutterError(
         code: "invalid_request",
         message: "A numeric iOS adUnitId and active view controller are required.",
@@ -554,6 +600,8 @@ private final class NapMxPlatformAdView: NSObject, FlutterPlatformView,
       ))
       return
     }
+    generation += 1
+    let token = generation
     releaseAds()
     loading = true
     startedAt = Date()
@@ -561,44 +609,40 @@ private final class NapMxPlatformAdView: NSObject, FlutterPlatformView,
     result(nil)
     switch format {
     case "banner":
-      AMMBannerView.loadAd(adUnitID: adUnitId, rootViewController: root) {
+      loaders.banner(adUnitId, root) {
         [weak self] ad, adapterType, error in
-        guard let self else { return }
+        guard let self, self.isCurrent(token) else { ad?.stop(); return }
         if let error { self.failed(error); return }
         guard let ad else { self.failed(nil); return }
         self.banner = ad
         ad.delegate = self
-        self.attach(ad)
         self.loaded(adapterType)
+        self.attach(ad)
       }
     case "inlineVideo":
-      AMMVideoView.loadAd(adUnitID: adUnitId, rootViewController: root) {
+      loaders.video(adUnitId, root) {
         [weak self] ad, adapterType, error in
-        guard let self else { return }
+        guard let self, self.isCurrent(token) else { ad?.stop(); return }
         if let error { self.failed(error); return }
         guard let ad else { self.failed(nil); return }
         self.video = ad
         ad.delegate = self
-        self.attach(ad)
         self.loaded(adapterType)
+        self.attach(ad)
       }
     case "native":
       guard let nativeView = loadNativeTemplate() else {
         failedMessage("Native template resource is unavailable.")
         return
       }
-      AMMNativeAdViewContainer.loadAd(
-        adUnitID: adUnitId,
-        rootViewController: root,
-        nativeAdView: nativeView
-      ) { [weak self] ad, adapterType, error in
-        guard let self else { return }
+      loaders.native(adUnitId, root, nativeView) { [weak self] ad, adapterType, error in
+        guard let self, self.isCurrent(token) else { ad?.stop(); return }
         if let error { self.failed(error); return }
         guard let ad else { self.failed(nil); return }
         self.native = ad
         ad.delegate = self
-        self.attach(ad)
         self.loaded(adapterType)
+        self.attach(ad)
       }
     default: failedMessage("Unsupported view format: \(format)")
     }
@@ -621,8 +665,11 @@ private final class NapMxPlatformAdView: NSObject, FlutterPlatformView,
     }
   }
 
+  /// Whether a load completion belongs to the latest load of a live view.
+  private func isCurrent(_ token: Int) -> Bool { !disposed && generation == token }
+
+  // Load completions gate on isCurrent before calling this.
   private func loaded(_ adapterType: Any) {
-    guard !disposed else { releaseAds(); return }
     loading = false
     emit("loaded", network: String(describing: adapterType))
   }
@@ -648,19 +695,24 @@ private final class NapMxPlatformAdView: NSObject, FlutterPlatformView,
   }
 
   private func release(final: Bool) {
+    guard !disposed else { return }
+    generation += 1
     loading = false
+    disposed = final
     releaseAds()
     emit(final ? "disposed" : "cancelled")
-    if final { disposed = true; channel.setMethodCallHandler(nil) }
+    if final { channel.setMethodCallHandler(nil) }
   }
 
   private func releaseAds() {
+    banner?.delegate = nil; video?.delegate = nil; native?.delegate = nil
     banner?.stop(); video?.stop(); native?.stop()
     banner = nil; video = nil; native = nil
     container.subviews.forEach { $0.removeFromSuperview() }
   }
 
   private func emit(_ type: String, network: String? = nil) {
+    guard !disposed || type == "disposed" else { return }
     var value = event(type)
     value["network"] = network ?? NSNull()
     emitBlock(value)
