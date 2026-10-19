@@ -56,7 +56,7 @@ class NapMxFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     EventChannel.StreamHandler, ActivityAware {
 
     companion object {
-        private const val PLUGIN_VERSION = "0.1.6"
+        private const val PLUGIN_VERSION = "0.1.7"
 
         /**
          * How long a closed full-screen ad is kept alive so that a reward callback which

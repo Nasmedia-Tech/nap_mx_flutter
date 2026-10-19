@@ -9,7 +9,7 @@ final class RunnerTests: XCTestCase {
     NapMxFlutterPlugin().handle(FlutterMethodCall(methodName: "getSdkInfo", arguments: nil)) { result in
       let info = result as? [String: Any]
       XCTAssertEqual(info?["platform"] as? String, "ios")
-      XCTAssertEqual(info?["pluginVersion"] as? String, "0.1.6")
+      XCTAssertEqual(info?["pluginVersion"] as? String, "0.1.7")
     }
   }
 

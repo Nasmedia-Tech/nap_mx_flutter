@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.7
 
 - Correct the Android and iOS plugin version returned by `getSdkInfo` to match
   the package version, and check native/CocoaPods release metadata in tests.
