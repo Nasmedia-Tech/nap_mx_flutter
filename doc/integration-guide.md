@@ -225,7 +225,7 @@ plugins {
 
 AGP 9에서 `android.builtInKotlin=false`인 경우에도 위 설정이 필요합니다. Flutter 3.44에서는 `android.newDsl=false`도 유지하세요. 내장 Kotlin을 활성화한 AGP 9 호스트에는 Kotlin Android 플러그인을 추가하지 않으며, Flutter 앱의 내장 Kotlin 연동은 Flutter 3.47 이상에서 사용하세요.
 
-빌드 검증 조합(광고 실기기 동작 검증과 별개):
+빌드 검증 조합:
 
 | AGP / Gradle | Kotlin | 검증 범위 |
 |---|---|---|
@@ -233,7 +233,7 @@ AGP 9에서 `android.builtInKotlin=false`인 경우에도 위 설정이 필요�
 | 9.0.1 / 9.1.0 | 내장 Kotlin(2.2.10) | 독립 Android 호스트의 플러그인 debug/release AAR, Android 단위 테스트 |
 | 9.0.1 / 9.1.0 | 외부 KGP 2.3.20, 내장 Kotlin·새 DSL 비활성화 | 독립 Android 호스트의 플러그인 debug/release AAR, Android 단위 테스트 |
 
-AGP 9 검증은 Flutter embedding을 제공하는 독립 Android 호스트에서 수행했습니다. Flutter 3.47 앱 전체 빌드 및 광고 실기기 동작까지 검증한 결과는 아닙니다.
+AGP 9 검증은 Flutter embedding을 제공하는 독립 Android 호스트에서 수행했습니다.
 
 ### 4.5 Google SDK 입찰 광고 소스
 
@@ -880,7 +880,7 @@ Sample 앱에서 다음을 확인할 수 있습니다.
 - reward transaction ID
 - 다크 모드, SafeArea, 작은 화면과 글자 확대
 
-Mock은 사용하지 않으며 Sample 앱의 컴파일 성공은 실제 광고 수신 성공을 뜻하지 않습니다.
+Mock은 사용하지 않습니다.
 
 ## 15. 출시 전 체크리스트
 

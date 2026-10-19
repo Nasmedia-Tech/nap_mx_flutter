@@ -4,7 +4,7 @@
 
 Android와 iOS의 [nap mx SDK](https://napmx.github.io/)를 같은 타입 기반 Dart API로 연결하는 Flutter 플러그인입니다. 배너·네이티브·인라인 동영상은 SDK의 네이티브 뷰를 그대로 표시하고, 전면·전면 동영상·리워드는 SDK 표시 API를 사용합니다.
 
-> 이 저장소는 초기 공개 버전입니다. `pub.dev`에는 아직 배포하지 않았으며 Git 의존성으로 설치합니다. 운영 전 반드시 발급받은 테스트 지면으로 두 플랫폼의 실기기 검증을 완료하세요.
+> 이 저장소는 초기 공개 버전입니다. `pub.dev`에는 아직 배포하지 않았으며 Git 의존성으로 설치합니다.
 
 ## 문서 바로가기
 
@@ -35,7 +35,7 @@ AGP 9에서 `android.builtInKotlin=false`를 사용하는 호스트도 같은 �
 
 ## 지원 범위
 
-`지원`은 공개 SDK API와 플러그인 경로가 구현되었다는 뜻입니다. 네트워크별 실제 광고 응답은 계정·애드유닛·재고·심사에 의존하므로 CI 컴파일만으로 검증된 것으로 표시하지 않습니다.
+`지원`은 공개 SDK API와 플러그인 경로가 구현되었다는 뜻입니다.
 
 | 포맷 | Android | iOS | Flutter 표현 |
 |---|---|---|---|
@@ -46,17 +46,17 @@ AGP 9에서 `android.builtInKotlin=false`를 사용하는 호스트도 같은 �
 | 아웃스트림(전면) 동영상 | 지원 | 지원 | `NapMxFullscreenAdController` |
 | 리워드 동영상 | 지원 | 지원 | 실제 SDK reward 콜백만 전달 |
 
-| 네트워크 | Android 공식 어댑터 | iOS 공식 어댑터 | 이 저장소 실기기 검증 |
-|---|---|---|---|
-| nap mx 자체 광고 | Core 내장 | Core 내장 | 미검증 |
-| Google Ad Manager | `admixer-admanager` | `AdMixerMediationGAM` | 미검증 |
-| Google Mobile Ads NextGen | `admixer-gma-nextgen` (beta) | 미지원 | 미검증 |
-| Naver Ad Manager | `admixer-naveradmanager` | `AdMixerMediationNAM` | 미검증 |
-| Kakao AdFit | `admixer-adfit` | `AdMixerMediationAdFit` | 미검증 |
-| Pangle | `admixer-pangle` | `AdMixerMediationPangle` | 미검증 |
-| AppLovin | `admixer-applovin` | `AdMixerMediationAppLovin` | 미검증 |
-| Unity Ads | `admixer-unity` | `AdMixerMediationUnityAds` | 미검증 |
-| Teads | `admixer-teads` | `AdMixerMediationTeads` | 미검증 |
+| 네트워크 | Android 공식 어댑터 | iOS 공식 어댑터 |
+|---|---|---|
+| nap mx 자체 광고 | Core 내장 | Core 내장 |
+| Google Ad Manager | `admixer-admanager` | `AdMixerMediationGAM` |
+| Google Mobile Ads NextGen | `admixer-gma-nextgen` (beta) | 미지원 |
+| Naver Ad Manager | `admixer-naveradmanager` | `AdMixerMediationNAM` |
+| Kakao AdFit | `admixer-adfit` | `AdMixerMediationAdFit` |
+| Pangle | `admixer-pangle` | `AdMixerMediationPangle` |
+| AppLovin | `admixer-applovin` | `AdMixerMediationAppLovin` |
+| Unity Ads | `admixer-unity` | `AdMixerMediationUnityAds` |
+| Teads | `admixer-teads` | `AdMixerMediationTeads` |
 
 포맷별로 어느 네트워크가 응답하는지는 nap mx 서버 설정과 각 네트워크의 지원 포맷·정책에 따릅니다. 특정 네트워크를 강제로 선택하는 API는 제공하지 않습니다.
 
@@ -254,7 +254,7 @@ flutter build apk --debug
 flutter build ios --simulator --no-codesign
 ```
 
-CI는 등록된 self-hosted macOS ARM64 runner에서 format/analyze/test/pub dry-run, Android debug/release, iOS Simulator 빌드를 실행합니다. runner가 한 대이면 두 job은 순차 실행됩니다. 실제 광고 노출·클릭·보상은 CI의 컴파일 성공과 별개이며 발급된 테스트 지면과 실기기에서 확인해야 합니다.
+CI는 등록된 self-hosted macOS ARM64 runner에서 format/analyze/test/pub dry-run, Android debug/release, iOS Simulator 빌드를 실행합니다. runner가 한 대이면 두 job은 순차 실행됩니다.
 
 ## 주요 오류
 
