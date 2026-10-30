@@ -102,6 +102,11 @@ class NapMxFullscreenTest {
                                         listener.onAdShowFailed(null, AdNetworkType.ADMIXER, AdMixer.AX_ERR_NO_ADS, "Show failed")
                                         verify(show).error("show_failed", "Show failed", AdMixer.AX_ERR_NO_ADS)
                                         assertEquals("showFailed", events.last()["type"])
+                                        // Nothing was presented, so the plugin releases the request
+                                        // itself instead of waiting for the app to dispose it.
+                                        val retry = mock<MethodChannel.Result>()
+                                        plugin.onMethodCall(MethodCall("showFullscreen", mapOf("requestId" to "request")), retry)
+                                        verify(retry).error("not_loaded", "No active request for request.", null)
                                         plugin.onDetachedFromEngine(binding)
                                         continue
                                     }

@@ -386,10 +386,19 @@ class NapMxFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                     adView: Any?, adapterName: String, errorCode: Int, errorMsg: String?,
                 ) {
                     if (finished.get()) return
+                    // A pending show result means nothing reached the screen, so no close
+                    // callback follows.
+                    val neverPresented = showResult != null
                     state = "failed"
                     showResult?.error("show_failed", errorMsg ?: "Ad show failed.", errorCode)
                     showResult = null
                     emit(errorEvent("showFailed", "show_failed", errorMsg, errorCode))
+                    // Release the ad now instead of holding it until the app disposes the
+                    // request. A failure after presentation keeps the ad until onAdClosed.
+                    if (neverPresented) {
+                        dispose(false)
+                        requests.remove(id, this@FullscreenRequest)
+                    }
                 }
             }
             when (loadedAd) {

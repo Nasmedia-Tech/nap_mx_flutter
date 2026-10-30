@@ -1,3 +1,16 @@
+## Unreleased
+
+- iOS: report plugin-raised load failures (an SDK result without an ad, an
+  unsupported format) without a native code, so `isNoFill` is no longer set
+  for them.
+- iOS: reject a non-empty `testDeviceIds` with `test_mode_unsupported` and a
+  non-empty `usPrivacyString` with `unsupported_privacy` instead of silently
+  ignoring them; the iOS SDK has neither API. Document that iOS ignores
+  `muted` and has only a debug log switch.
+- Android and iOS: release a full-screen ad as soon as it fails to show before
+  reaching the screen, instead of holding it until the app disposes the
+  controller. A failure after presentation still waits for the close callback.
+
 ## 0.1.7
 
 - Correct the Android and iOS plugin version returned by `getSdkInfo` to match

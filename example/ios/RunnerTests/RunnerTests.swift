@@ -35,6 +35,7 @@ final class RunnerTests: XCTestCase {
         request.onRewardVideoComplete()
         request.onFailShowReward(error: error); request.onCloseRewardVideo()
       }
+      // The failure follows presentation, so the close callback still arrives and releases it.
       let expected = format == "interstitial"
         ? ["shown", "clicked", "showFailed", "closed"]
         : ["shown", "clicked", "completed", "showFailed", "closed"]
@@ -47,6 +48,38 @@ final class RunnerTests: XCTestCase {
       let count = events.count
       request.onClickInterstitial(); request.onSuccessShowReward(); request.onCloseVideoInterstitial()
       XCTAssertEqual(events.count, count)
+    }
+  }
+
+  func testPluginRaisedLoadFailureIsNotNoFill() {
+    var events: [[String: Any]] = []
+    var completion: Any?
+    let request = NapMxFullscreenRequest(
+      id: "request", format: "unknown", adUnitText: "456", adUnitId: 456,
+      customParams: nil, timeout: 30, completion: { completion = $0 },
+      emit: { events.append($0) }, finished: { _ in }
+    )
+    request.load()
+    let error = events.last?["error"] as? [String: Any]
+    XCTAssertEqual(error?["code"] as? String, "unsupported")
+    XCTAssertEqual(error?["isNoFill"] as? Bool, false)
+    XCTAssertTrue(error?["nativeCode"] is NSNull)
+    XCTAssertNil((completion as? FlutterError)?.details)
+  }
+
+  func testAndroidOnlySettingsAreRejected() {
+    for (extra, code) in [
+      (["testDeviceIds": ["device"]], "test_mode_unsupported"),
+      (["privacy": ["usPrivacyString": "1YNN"]], "unsupported_privacy"),
+    ] as [([String: Any], String)] {
+      var calls = 0
+      let plugin = NapMxFlutterPlugin { _, _ in calls += 1 }
+      var arguments: [String: Any] = ["mediaKey": "123", "adUnitIds": ["banner": "456"]]
+      arguments.merge(extra) { $1 }
+      var result: Any?
+      plugin.handle(FlutterMethodCall(methodName: "initialize", arguments: arguments)) { result = $0 }
+      XCTAssertEqual((result as? FlutterError)?.code, code)
+      XCTAssertEqual(calls, 0)
     }
   }
 
