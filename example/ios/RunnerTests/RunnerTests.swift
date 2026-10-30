@@ -190,12 +190,19 @@ final class RunnerTests: XCTestCase {
       switch format {
       case "banner": view.onSuccessShowBanner(); view.onClickBanner()
       case "native": view.onSuccessShowNative(); view.onClickNative()
-      default: view.onSuccessShowVideo(); view.onClickVideo(); view.onCompleteVideo(); view.onSkipVideo()
+      default:
+        view.onSuccessShowVideo(); view.onClickVideo(); view.onCompleteVideo(); view.onSkipVideo()
+        view.onFailShowVideo(error: NSError(domain: "test", code: -5))
+        let failure = events.last?["error"] as? [String: Any]
+        XCTAssertEqual(events.last?["type"] as? String, "showFailed")
+        XCTAssertEqual(failure?["code"] as? String, "show_failed")
+        XCTAssertEqual(failure?["nativeCode"] as? Int, -5)
       }
       XCTAssertTrue(events.allSatisfy { $0["viewId"] as? Int == 7 && $0["adUnitId"] as? String == "456" })
       XCTAssertNil(messenger.invoke("dispose"))
       let disposedCount = events.count
       view.onSuccessShowBanner(); view.onClickVideo(); view.onCompleteVideo()
+      view.onFailShowVideo(error: nil)
       XCTAssertEqual(events.count, disposedCount)
       XCTAssertTrue(view.view().subviews.isEmpty)
       XCTAssertEqual(events.last?["type"] as? String, "disposed")

@@ -526,6 +526,9 @@ internal class NapMxPlatformAdView(
                 loading = false; emitError("load_failed", message ?: "Ad load failed.", code)
             }
         }
+        override fun onAdShowFailed(adView: Any?, adapterName: String, errorCode: Int, errorMsg: String?) {
+            if (isCurrent()) emitError("show_failed", errorMsg ?: "Ad show failed.", errorCode, "showFailed")
+        }
         override fun onAdDisplayed() { if (isCurrent()) emitEvent("shown") }
         override fun onAdClicked() { if (isCurrent()) emitEvent("clicked") }
         override fun onAdClosed() { if (isCurrent()) emitEvent("closed") }
@@ -627,10 +630,10 @@ internal class NapMxPlatformAdView(
             "elapsedMs" to if (startedAt == 0L) null else (System.currentTimeMillis() - startedAt).toInt(),
         ))
     }
-    private fun emitError(code: String, message: String, nativeCode: Int?) {
+    private fun emitError(code: String, message: String, nativeCode: Int?, type: String = "loadFailed") {
         if (disposed) return
         emit(mapOf(
-            "type" to "loadFailed", "timestampMs" to System.currentTimeMillis(), "viewId" to viewId,
+            "type" to type, "timestampMs" to System.currentTimeMillis(), "viewId" to viewId,
             "format" to format, "adUnitId" to adUnitId,
             "elapsedMs" to if (startedAt == 0L) null else (System.currentTimeMillis() - startedAt).toInt(),
             "error" to mapOf("code" to code, "message" to message, "nativeCode" to nativeCode,

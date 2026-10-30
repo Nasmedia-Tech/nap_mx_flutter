@@ -44,6 +44,7 @@ class NapMxAdViewTest {
                             old.onFailedToReceiveAd(-1, "late failure")
                             old.onAdDisplayed()
                             old.onAdClicked()
+                            old.onAdShowFailed(null, AdNetworkType.ADMIXER, -5, "late show failure")
                             assertEquals(before, events.size)
                             val duplicate = mock<MethodChannel.Result>()
                             view.onMethodCall(MethodCall("load", null), duplicate)
@@ -53,9 +54,13 @@ class NapMxAdViewTest {
                             current.onAdClicked()
                             current.onAdCompleted()
                             current.onAdSkipped()
+                            current.onAdShowFailed(null, AdNetworkType.ADMIXER, -5, "Show failed")
                             current.onAdClosed()
-                            assertEquals(listOf("loaded", "shown", "clicked", "completed", "skipped", "closed"),
+                            assertEquals(listOf("loaded", "shown", "clicked", "completed", "skipped", "showFailed", "closed"),
                                 events.drop(before).map { it["type"] })
+                            val failure = events.single { it["type"] == "showFailed" }["error"] as Map<*, *>
+                            assertEquals("show_failed", failure["code"])
+                            assertEquals(-5, failure["nativeCode"])
                             assertTrue(events.all { it["viewId"] == 7 && it["format"] == format && it["adUnitId"] == "123" })
                             view.dispose()
                             view.dispose()
