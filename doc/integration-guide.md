@@ -794,7 +794,7 @@ try {
 | `loaded` | 표시 가능한 광고 로드 | 전면 광고 Show 버튼 활성화 |
 | `loadFailed` | 로드 실패 | 오류 기록 후 UI 복구 |
 | `shown` | SDK 표시 콜백 수신 | 노출 상태 기록 |
-| `showFailed` | 표시 실패 | controller 해제 후 필요할 때 새 요청 |
+| `showFailed` | 표시 실패. 화면에 뜨기 전 실패면 플러그인이 광고를 바로 해제함 | controller 해제 후 필요할 때 새 요청 |
 | `clicked` | SDK 클릭 콜백 수신 | 분석 기록만 수행, 클릭 자동화 금지 |
 | `completed` | 동영상 완료 콜백 | 보상 지급 근거로 사용하지 않음 |
 | `skipped` | 동영상 건너뜀 | UI 상태 복구 |
@@ -840,9 +840,9 @@ try {
 | `no_activity`, `no_view_controller` | 표시 가능한 활성 화면 없음 |
 | `show_failed` | 네이티브 표시 실패 |
 | `cancelled`, `disposed` | 요청 취소 또는 해제 후 접근 |
-| `test_mode_unsupported` | iOS에서 전역 테스트 모드를 요청함 |
+| `test_mode_unsupported` | iOS에서 전역 테스트 모드나 `testDeviceIds`를 요청함 |
 | `mediation_configuration_unsupported` | iOS에서 Android용 mediation 맵을 전달함 |
-| `unsupported_privacy` | Android에서 지원하지 않는 under-age 값을 직접 전달함 |
+| `unsupported_privacy` | Android에서 지원하지 않는 under-age 값을, iOS에서 `usPrivacyString`을 전달함 |
 
 어댑터 누락을 포함한 네이티브 실패는 보통 `load_failed`와 플랫폼별 `nativeCode`로 전달됩니다. Android의 `0x8000000x` 계열과 iOS의 `-1`부터 `-8` 코드는 각각 [공식 Android](https://napmx.github.io/#/android/native/error-codes)와 [공식 iOS](https://napmx.github.io/#/ios/native/getting-started) 오류표를 확인하세요.
 

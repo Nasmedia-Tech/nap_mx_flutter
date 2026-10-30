@@ -56,6 +56,9 @@ final class NapMxPrivacySettings {
   final NapMxConsentStatus underAgeOfConsent;
 
   /// IAB US Privacy string, for example `1YNN`. The host CMP owns this value.
+  ///
+  /// Android only. iOS rejects a non-empty value with `unsupported_privacy`
+  /// because its SDK has no matching API; use [usSaleConsent] there.
   final String? usPrivacyString;
 
   Map<String, Object?> toMap() => <String, Object?>{
@@ -127,12 +130,18 @@ final class NapMxConfiguration {
   final NapMxPrivacySettings privacy;
 
   /// Native SDK diagnostic verbosity.
+  ///
+  /// iOS has only a debug switch: [NapMxLogLevel.debug] turns it on and every
+  /// other level turns it off.
   final NapMxLogLevel logLevel;
 
   /// Android global test mode. iOS rejects true because no equivalent API exists.
   final bool testMode;
 
   /// Android native test-device identifiers, if officially assigned.
+  ///
+  /// iOS rejects a non-empty list with `test_mode_unsupported` because its SDK
+  /// has no test-device API.
   final List<String> testDeviceIds;
 
   /// Optional Android adapter configuration consumed only by installed adapters.

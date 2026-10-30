@@ -108,6 +108,24 @@ public final class NapMxFlutterPlugin: NSObject, FlutterPlugin, FlutterStreamHan
       ))
       return
     }
+    if let testDeviceIds = args["testDeviceIds"] as? [Any], !testDeviceIds.isEmpty {
+      result(FlutterError(
+        code: "test_mode_unsupported",
+        message: "The nap mx iOS SDK has no test-device API. Use assigned test units and network debug tools.",
+        details: nil
+      ))
+      return
+    }
+    let privacy = args["privacy"] as? [String: Any]
+    if let usPrivacy = privacy?["usPrivacyString"] as? String,
+       !usPrivacy.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      result(FlutterError(
+        code: "unsupported_privacy",
+        message: "The nap mx iOS SDK has no US Privacy string API; use usSaleConsent instead.",
+        details: nil
+      ))
+      return
+    }
     if let mediation = args["mediation"] as? [String: Any], !mediation.isEmpty {
       result(FlutterError(
         code: "mediation_configuration_unsupported",
@@ -129,7 +147,7 @@ public final class NapMxFlutterPlugin: NSObject, FlutterPlugin, FlutterStreamHan
       return
     }
 
-    if let privacy = args["privacy"] as? [String: Any] {
+    if let privacy {
       let consent = AMMConsent()
       consent.gdprConsent = consentValue(privacy["gdprConsent"] as? String)
       consent.usSaleConsent = consentValue(privacy["usSaleConsent"] as? String)
@@ -281,7 +299,7 @@ final class NapMxFullscreenRequest: NSObject,
         guard let self else { ad?.stop(); return }
         guard self.acceptsLoad(ad, current: self.interstitial, stop: { ad?.stop() }) else { return }
         if let error { self.failLoad(error: error); return }
-        guard let ad else { self.failLoad(code: "load_failed", message: "SDK returned no ad.", nativeCode: -1); return }
+        guard let ad else { self.failLoad(code: "load_failed", message: "SDK returned no ad.", nativeCode: nil); return }
         self.interstitial = ad
         ad.delegate = self
         self.loaded(network: String(describing: adapterType))
@@ -291,7 +309,7 @@ final class NapMxFullscreenRequest: NSObject,
         guard let self else { ad?.stop(); return }
         guard self.acceptsLoad(ad, current: self.video, stop: { ad?.stop() }) else { return }
         if let error { self.failLoad(error: error); return }
-        guard let ad else { self.failLoad(code: "load_failed", message: "SDK returned no ad.", nativeCode: -1); return }
+        guard let ad else { self.failLoad(code: "load_failed", message: "SDK returned no ad.", nativeCode: nil); return }
         self.video = ad
         ad.delegate = self
         self.loaded(network: String(describing: adapterType))
@@ -302,12 +320,12 @@ final class NapMxFullscreenRequest: NSObject,
         guard let self else { ad?.stop(); return }
         guard self.acceptsLoad(ad, current: self.reward, stop: { ad?.stop() }) else { return }
         if let error { self.failLoad(error: error); return }
-        guard let ad else { self.failLoad(code: "load_failed", message: "SDK returned no ad.", nativeCode: -1); return }
+        guard let ad else { self.failLoad(code: "load_failed", message: "SDK returned no ad.", nativeCode: nil); return }
         self.reward = ad
         ad.delegate = self
         self.loaded(network: String(describing: adapterType))
       }
-    default: failLoad(code: "unsupported", message: "Unsupported format.", nativeCode: -1)
+    default: failLoad(code: "unsupported", message: "Unsupported format.", nativeCode: nil)
     }
   }
 
@@ -360,6 +378,8 @@ final class NapMxFullscreenRequest: NSObject,
 
   private func didFailShow(_ error: Error?) {
     guard !disposed else { return }
+    // A pending show result means nothing reached the screen, so no close callback follows.
+    let neverPresented = showResult != nil
     state = "failed"
     let nsError = error as NSError?
     showResult?(FlutterError(
@@ -375,6 +395,12 @@ final class NapMxFullscreenRequest: NSObject,
       message: error?.localizedDescription ?? "Ad show failed.",
       nativeCode: code
     ))
+    // Release the ad now instead of holding it until the app disposes the controller.
+    // A failure after presentation keeps the ad until its close callback releases it.
+    if neverPresented {
+      dispose(notify: false)
+      finishedBlock(id)
+    }
   }
 
   private func didClose() {
@@ -404,7 +430,9 @@ final class NapMxFullscreenRequest: NSObject,
     failLoad(code: "load_failed", message: error.localizedDescription, nativeCode: nsError.code)
   }
 
-  private func failLoad(code: String, message: String, nativeCode: Int) {
+  /// Pass a nil `nativeCode` for failures the plugin raises itself, so that they are never
+  /// mistaken for the SDK's no-fill (-1) or timeout (-8) codes.
+  private func failLoad(code: String, message: String, nativeCode: Int?) {
     guard !disposed, state == "loading" else { return }
     state = "failed"
     timeoutWork?.cancel()
@@ -453,13 +481,13 @@ final class NapMxFullscreenRequest: NSObject,
   }
 
   private func errorEvent(
-    _ type: String, code: String, message: String, nativeCode: Int
+    _ type: String, code: String, message: String, nativeCode: Int?
   ) -> [String: Any] {
     var value = event(type)
     value["error"] = [
       "code": code,
       "message": message,
-      "nativeCode": nativeCode,
+      "nativeCode": nativeCode ?? NSNull(),
       "isNoFill": nativeCode == -1,
       "isTimeout": nativeCode == -8,
     ]

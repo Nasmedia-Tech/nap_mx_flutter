@@ -141,7 +141,9 @@ class NapMxAdView extends StatelessWidget {
   /// is emitted instead of loading.
   final bool autoLoad;
 
-  /// Requested initial mute state for video formats when supported by the SDK.
+  /// Requested initial mute state for video formats.
+  ///
+  /// Android only. The iOS SDK has no mute setting, so iOS ignores it.
   final bool muted;
 
   @override
