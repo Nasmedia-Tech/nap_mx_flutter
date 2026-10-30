@@ -51,6 +51,42 @@ final class RunnerTests: XCTestCase {
     }
   }
 
+  func testShowFailureBeforePresentationReleasesRequest() {
+    for format in ["interstitial", "interstitialVideo", "rewarded"] {
+      var loaders = NapMxFullscreenLoaders()
+      loaders.interstitial = { _, done in done(AMMInterstitial(), .unknown, nil) }
+      loaders.video = { _, done in done(AMMVideoInterstitial(), .unknown, nil) }
+      loaders.reward = { _, _, done in done(AMMRewardVideo(), .unknown, nil) }
+      var shown: [NSObject] = []
+      loaders.show = { ad, _ in shown.append(ad) }
+      var events: [[String: Any]] = []
+      var finished: [String] = []
+      let request = NapMxFullscreenRequest(
+        id: "request", format: format, adUnitText: "456", adUnitId: 456,
+        customParams: nil, timeout: 30, completion: { XCTAssertNil($0) },
+        emit: { events.append($0) }, finished: { finished.append($0) },
+        loaders: loaders, rootViewController: { UIViewController() }
+      )
+      request.load()
+      var showResult: Any?
+      request.show(result: { showResult = $0 })
+      XCTAssertEqual(shown.count, 1)
+      let error = NSError(domain: "test", code: -5)
+      switch format {
+      case "interstitial": request.onFailShowInterstitial(error: error); request.onCloseInterstitial()
+      case "interstitialVideo": request.onFailShowVideoInterstitial(error: error); request.onCloseVideoInterstitial()
+      default: request.onFailShowReward(error: error); request.onCloseRewardVideo()
+      }
+      XCTAssertEqual((showResult as? FlutterError)?.code, "show_failed")
+      // Nothing was presented, so the request releases itself without waiting for dispose.
+      XCTAssertEqual(finished, ["request"])
+      XCTAssertEqual(events.compactMap { $0["type"] as? String }, ["loaded", "showFailed"])
+      var retry: Any?
+      request.show(result: { retry = $0 })
+      XCTAssertEqual((retry as? FlutterError)?.message, "Ad is in state disposed.")
+    }
+  }
+
   func testPluginRaisedLoadFailureIsNotNoFill() {
     var events: [[String: Any]] = []
     var completion: Any?

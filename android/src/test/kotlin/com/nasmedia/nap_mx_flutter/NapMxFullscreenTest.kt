@@ -74,7 +74,7 @@ class NapMxFullscreenTest {
                                     )), load)
                                     val capture = argumentCaptor<AdListener>()
                                     val rewardAd = mock<AMMRewardVideo>()
-                                    when (format) {
+                                    val loadedAd: Any = when (format) {
                                         "interstitial" -> {
                                             val ad = mock<AMMInterstitial>()
                                             (loadCallback as AMMInterstitialLoadCallback).onSuccessLoadInterstitial(AdNetworkType.ADMIXER, ad)
@@ -82,15 +82,18 @@ class NapMxFullscreenTest {
                                             // Duplicate success for the same instance must not stop the live ad.
                                             (loadCallback as AMMInterstitialLoadCallback).onSuccessLoadInterstitial("AdMixer", ad)
                                             verify(ad, never()).stop()
+                                            ad
                                         }
                                         "interstitialVideo" -> {
                                             val ad = mock<AMMVideoInterstitial>()
                                             (loadCallback as AMMVideoInterstitialLoadCallback).onSuccessLoadVideoInterstitial(AdNetworkType.ADMIXER, ad)
                                             verify(ad).setAdListener(capture.capture())
+                                            ad
                                         }
                                         else -> {
                                             (loadCallback as AMMRewardVideoLoadCallback).onSuccessLoadReward(AdNetworkType.ADMIXER, rewardAd)
                                             verify(rewardAd).setAdListener(capture.capture())
+                                            rewardAd
                                         }
                                     }
                                     verify(load).success(null)
@@ -107,6 +110,11 @@ class NapMxFullscreenTest {
                                         val retry = mock<MethodChannel.Result>()
                                         plugin.onMethodCall(MethodCall("showFullscreen", mapOf("requestId" to "request")), retry)
                                         verify(retry).error("not_loaded", "No active request for request.", null)
+                                        when (loadedAd) {
+                                            is AMMInterstitial -> verify(loadedAd).stop()
+                                            is AMMVideoInterstitial -> verify(loadedAd).stop()
+                                            is AMMRewardVideo -> verify(loadedAd).stop()
+                                        }
                                         plugin.onDetachedFromEngine(binding)
                                         continue
                                     }
