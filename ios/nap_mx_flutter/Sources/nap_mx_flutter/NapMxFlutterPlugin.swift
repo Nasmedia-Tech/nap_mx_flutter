@@ -239,6 +239,31 @@ public final class NapMxFlutterPlugin: NSObject, FlutterPlugin, FlutterStreamHan
   }
 }
 
+// Injectable SDK entry points keep show-failure tests independent of ad inventory.
+struct NapMxFullscreenLoaders {
+  typealias InterstitialCompletion = (AMMInterstitial?, AdNetworkType, Error?) -> Void
+  typealias VideoCompletion = (AMMVideoInterstitial?, AdNetworkType, Error?) -> Void
+  typealias RewardCompletion = (AMMRewardVideo?, AdNetworkType, Error?) -> Void
+
+  var interstitial: (Int, @escaping InterstitialCompletion) -> Void = {
+    AMMInterstitial.loadAd(adUnitID: $0, config: AMMInterstitialConfig(), completion: $1)
+  }
+  var video: (Int, @escaping VideoCompletion) -> Void = {
+    AMMVideoInterstitial.loadAd(adUnitID: $0, completion: $1)
+  }
+  var reward: (Int, [String: String]?, @escaping RewardCompletion) -> Void = {
+    AMMRewardVideo.loadAd(adUnitID: $0, customParam: $1, completion: $2)
+  }
+  var show: (NSObject, UIViewController) -> Void = { ad, root in
+    switch ad {
+    case let ad as AMMInterstitial: ad.show(rootViewController: root)
+    case let ad as AMMVideoInterstitial: ad.show(rootViewController: root)
+    case let ad as AMMRewardVideo: ad.show(rootViewController: root)
+    default: break
+    }
+  }
+}
+
 final class NapMxFullscreenRequest: NSObject,
     AMMInterstitialDelegate, AMMVideoInterstitialDelegate, AMMRewardVideoDelegate {
   /// How long a closed ad is kept alive so that a reward callback which the network
@@ -252,6 +277,8 @@ final class NapMxFullscreenRequest: NSObject,
   private let customParams: [String: String]?
   private let emitBlock: ([String: Any]) -> Void
   private let finishedBlock: (String) -> Void
+  private let loaders: NapMxFullscreenLoaders
+  private let rootViewController: () -> UIViewController?
   private var loadResult: FlutterResult?
   private var showResult: FlutterResult?
   private var timeoutWork: DispatchWorkItem?
@@ -273,8 +300,12 @@ final class NapMxFullscreenRequest: NSObject,
     timeout: TimeInterval,
     completion: @escaping FlutterResult,
     emit: @escaping ([String: Any]) -> Void,
-    finished: @escaping (String) -> Void
+    finished: @escaping (String) -> Void,
+    loaders: NapMxFullscreenLoaders = NapMxFullscreenLoaders(),
+    rootViewController: @escaping () -> UIViewController? = activeViewController
   ) {
+    self.loaders = loaders
+    self.rootViewController = rootViewController
     self.id = id
     self.format = format
     self.adUnitText = adUnitText
@@ -294,8 +325,7 @@ final class NapMxFullscreenRequest: NSObject,
   func load() {
     switch format {
     case "interstitial":
-      AMMInterstitial.loadAd(adUnitID: adUnitId, config: AMMInterstitialConfig()) {
-        [weak self] ad, adapterType, error in
+      loaders.interstitial(adUnitId) { [weak self] ad, adapterType, error in
         guard let self else { ad?.stop(); return }
         guard self.acceptsLoad(ad, current: self.interstitial, stop: { ad?.stop() }) else { return }
         if let error { self.failLoad(error: error); return }
@@ -305,7 +335,7 @@ final class NapMxFullscreenRequest: NSObject,
         self.loaded(network: String(describing: adapterType))
       }
     case "interstitialVideo":
-      AMMVideoInterstitial.loadAd(adUnitID: adUnitId) { [weak self] ad, adapterType, error in
+      loaders.video(adUnitId) { [weak self] ad, adapterType, error in
         guard let self else { ad?.stop(); return }
         guard self.acceptsLoad(ad, current: self.video, stop: { ad?.stop() }) else { return }
         if let error { self.failLoad(error: error); return }
@@ -315,8 +345,7 @@ final class NapMxFullscreenRequest: NSObject,
         self.loaded(network: String(describing: adapterType))
       }
     case "rewarded":
-      AMMRewardVideo.loadAd(adUnitID: adUnitId, customParam: customParams) {
-        [weak self] ad, adapterType, error in
+      loaders.reward(adUnitId, customParams) { [weak self] ad, adapterType, error in
         guard let self else { ad?.stop(); return }
         guard self.acceptsLoad(ad, current: self.reward, stop: { ad?.stop() }) else { return }
         if let error { self.failLoad(error: error); return }
@@ -353,15 +382,15 @@ final class NapMxFullscreenRequest: NSObject,
       result(FlutterError(code: "not_loaded", message: "Ad is in state \(state).", details: nil))
       return
     }
-    guard let root = activeViewController() else {
+    guard let root = rootViewController() else {
       result(FlutterError(code: "no_view_controller", message: "No active view controller.", details: nil))
       return
     }
     state = "showing"
     showResult = result
-    if let interstitial { interstitial.show(rootViewController: root) }
-    else if let video { video.show(rootViewController: root) }
-    else if let reward { reward.show(rootViewController: root) }
+    if let ad = [interstitial as NSObject?, video, reward].compactMap({ $0 }).first {
+      loaders.show(ad, root)
+    }
     else {
       state = "failed"
       showResult = nil
