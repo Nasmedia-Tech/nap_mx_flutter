@@ -795,13 +795,13 @@ final class NapMxPlatformAdView: NSObject, FlutterPlatformView,
   /// Mediation 2.6.0+: an nap mx video failed to prepare or stopped during playback.
   func onFailShowVideo(error: Error?) {
     guard !disposed else { return }
-    let nsError = error as NSError?
+    let nativeCode: Any = (error as NSError?).map { $0.code as Any } ?? NSNull()
     var value = event("showFailed")
     value["network"] = NSNull()
     value["error"] = [
       "code": "show_failed",
       "message": error?.localizedDescription ?? "Ad show failed.",
-      "nativeCode": nsError?.code ?? NSNull(),
+      "nativeCode": nativeCode,
       "isNoFill": false,
       "isTimeout": false,
     ]
