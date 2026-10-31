@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.8
 
 - iOS: report plugin-raised load failures (an SDK result without an ad, an
   unsupported format) without a native code, so `isNoFill` is no longer set

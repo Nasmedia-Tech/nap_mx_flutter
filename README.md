@@ -17,7 +17,7 @@ Android와 iOS의 [nap mx SDK](https://napmx.github.io/)를 같은 타입 기반
 
 ## 요구사항과 고정 버전
 
-아래 네이티브 버전은 `v0.1.7` 기준입니다. `v0.1.6`과 같은 네이티브 SDK를 사용합니다.
+아래 네이티브 버전은 `v0.1.8` 기준입니다. Android는 `v0.1.7`과 같고, iOS는 Mediation 2.6.0 / Core 1.5.1로 올라갔습니다.
 
 | 항목 | 최소/고정 버전 |
 |---|---|
@@ -71,7 +71,7 @@ dependencies:
   nap_mx_flutter:
     git:
       url: https://github.com/Nasmedia-Tech/nap_mx_flutter.git
-      ref: v0.1.7
+      ref: v0.1.8
 ```
 
 ```bash
@@ -163,7 +163,7 @@ await placementB.load();
 
 컨트롤러와 광고 뷰에는 사용할 ID를 명시하세요. `adUnitIdFor(format)`은 기존 맵만 조회합니다. 초기화 후 재호출하여 ID를 추가할 수 없으므로 사용할 지면을 처음에 모두 등록해야 합니다. 플러그인은 미등록 ID도 load 시 SDK로 전달하지만 실제 로드 성공 여부는 검증되지 않았습니다.
 
-이 API는 `v0.1.4`부터 제공됩니다. 위 설치 예시처럼 Git 의존성의 `ref`를 `v0.1.7`으로 지정하세요. 자세한 내용은 [다중 지면 등록 가이드](doc/integration-guide.md#61-같은-포맷의-여러-지면-등록-014)를 참고하세요.
+이 API는 `v0.1.4`부터 제공됩니다. 위 설치 예시처럼 Git 의존성의 `ref`를 `v0.1.8`로 지정하세요. 자세한 내용은 [다중 지면 등록 가이드](doc/integration-guide.md#61-같은-포맷의-여러-지면-등록-014)를 참고하세요.
 
 ### 4. 배너·네이티브·인라인 동영상
 

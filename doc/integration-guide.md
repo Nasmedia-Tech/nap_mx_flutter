@@ -6,7 +6,7 @@
 
 최신 네이티브 요구사항은 [nap mx 공식 가이드](https://napmx.github.io/)가 기준입니다. 이 문서의 검증 기준은 다음과 같습니다.
 
-> 아래 네이티브 SDK 버전은 `v0.1.7` 기준입니다. `v0.1.6`과 같은 네이티브 SDK를 사용합니다.
+> 아래 네이티브 SDK 버전은 `v0.1.8` 기준입니다. Android는 `v0.1.7`과 같고, iOS는 Mediation 2.6.0 / Core 1.5.1로 올라갔습니다.
 
 | 항목 | 고정/검증 버전 |
 |---|---|
@@ -58,7 +58,7 @@ dependencies:
   nap_mx_flutter:
     git:
       url: https://github.com/Nasmedia-Tech/nap_mx_flutter.git
-      ref: v0.1.7 # 검증된 공개 태그. main을 사용하지 마세요.
+      ref: v0.1.8 # 검증된 공개 태그. main을 사용하지 마세요.
 ```
 
 ```bash
