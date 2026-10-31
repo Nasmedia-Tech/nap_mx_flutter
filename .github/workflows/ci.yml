@@ -66,6 +66,16 @@ jobs:
           flutter config --enable-swift-package-manager
           flutter pub get
           flutter pub get --directory example
+      # The persistent runner keeps Xcode and SwiftPM caches between jobs. Module
+      # products built against an older nap mx SDK then break explicit module
+      # builds after an SDK update ("Missing required module ..."), so drop
+      # this project's entries before every iOS build.
+      - name: Clear stale Xcode and SwiftPM caches
+        run: |
+          rm -rf ~/Library/Developer/Xcode/DerivedData/ModuleCache.noindex
+          rm -rf ~/Library/Developer/Xcode/DerivedData/Runner-*
+          rm -rf ~/Library/Caches/org.swift.swiftpm/repositories/iOS-SSP-*
+          rm -rf ~/Library/Caches/org.swift.swiftpm/artifacts/*iOS-SSP*
       - name: Build iOS Simulator
         working-directory: example
         run: flutter build ios --simulator --no-codesign --no-pub
