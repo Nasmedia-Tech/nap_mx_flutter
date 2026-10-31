@@ -10,6 +10,13 @@
 - Android and iOS: release a full-screen ad as soon as it fails to show before
   reaching the screen, instead of holding it until the app disposes the
   controller. A failure after presentation still waits for the close callback.
+- Update iOS Mediation to 2.6.0 and iOS Core to 1.5.1 (Mediation 2.6.0 needs
+  Core 1.4.1 or later). Banner and native `shown` now arrive when the ad is at
+  least 50% visible, and an nap mx inline video reports `shown` when playback
+  actually starts.
+- Report `showFailed` for inline views: the iOS SDK's new inline video show
+  failure callback and the Android SDK's inline show failure callback were
+  previously dropped.
 
 ## 0.1.7
 
