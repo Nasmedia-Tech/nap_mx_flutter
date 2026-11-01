@@ -79,6 +79,9 @@ jobs:
       - name: Build iOS Simulator
         working-directory: example
         run: flutter build ios --simulator --no-codesign --no-pub
+      # Launching the test host right after the simulator boots sometimes fails
+      # with "Busy (Application failed preflight checks)". Wait for a full boot,
+      # build once, and retry a failed launch once on a freshly booted device.
       - name: iOS plugin unit tests
         working-directory: example
         run: |
@@ -87,6 +90,19 @@ jobs:
           devices = json.load(sys.stdin)["devices"]
           print(next(d["udid"] for runtime, group in devices.items()
                      if "iOS" in runtime for d in group if d["name"].startswith("iPhone")))')
-          xcodebuild test -workspace ios/Runner.xcworkspace -scheme Runner \
-            -destination "platform=iOS Simulator,id=$nap_mx_simulator_id" \
-            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+          nap_mx_args=(
+            -workspace ios/Runner.xcworkspace -scheme Runner
+            -destination "platform=iOS Simulator,id=$nap_mx_simulator_id"
+            -derivedDataPath build/ios_tests
+          )
+          xcrun simctl bootstatus "$nap_mx_simulator_id" -b
+          xcodebuild build-for-testing "${nap_mx_args[@]}" CODE_SIGNING_ALLOWED=NO
+          for nap_mx_attempt in 1 2; do
+            if xcodebuild test-without-building "${nap_mx_args[@]}" -parallel-testing-enabled NO; then
+              exit 0
+            fi
+            echo "::warning::iOS tests failed on attempt $nap_mx_attempt; rebooting the simulator."
+            xcrun simctl shutdown "$nap_mx_simulator_id" || true
+            xcrun simctl bootstatus "$nap_mx_simulator_id" -b
+          done
+          exit 1
