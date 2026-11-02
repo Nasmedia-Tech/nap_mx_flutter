@@ -1,14 +1,12 @@
 # nap mx Flutter 상세 연동 가이드
 
-이 문서는 `nap_mx_flutter`를 실제 Android·iOS Flutter 앱에 적용하는 매체 개발자를 위한 순서형 가이드입니다. 플러그인은 Flutter와 nap mx 네이티브 SDK 사이의 공통 API를 제공하지만, 매체 계정 발급, 개인정보 동의 UI, 선택 광고 네트워크의 앱 키와 네이티브 초기화는 호스트 앱의 책임입니다.
+이 문서는 `nap_mx_flutter`를 Android·iOS Flutter 앱에 적용하는 순서를 설명합니다. 플러그인은 Flutter와 nap mx 네이티브 SDK 사이의 공통 API를 제공하지만, 매체 계정 발급, 개인정보 동의 UI, 선택 광고 네트워크의 앱 키와 네이티브 초기화는 호스트 앱의 책임입니다.
 
-웹에서 읽는 공개 문서는 [nap mx Flutter SDK (Beta) 공식 가이드](https://napmx.github.io/#/flutter/)를 확인하세요. 이 저장소 문서는 릴리스 태그와 함께 보존되는 상세 참조입니다.
+웹 문서는 [nap mx Flutter SDK (Beta) 공식 가이드](https://napmx.github.io/#/flutter/)에 있습니다. 네이티브 SDK 요구사항은 [nap mx 공식 가이드](https://napmx.github.io/)를 따릅니다.
 
-최신 네이티브 요구사항은 [nap mx 공식 가이드](https://napmx.github.io/)가 기준입니다. 이 문서의 검증 기준은 다음과 같습니다.
+이 문서는 플러그인 `v0.1.8` 기준입니다.
 
-> 아래 네이티브 SDK 버전은 `v0.1.8` 기준입니다. Android는 `v0.1.7`과 같고, iOS는 Mediation 2.6.0 / Core 1.5.1로 올라갔습니다.
-
-| 항목 | 고정/검증 버전 |
+| 항목 | 버전 |
 |---|---|
 | Flutter CI | 3.44.9 |
 | Android Core | `admixer-ssp:2.4.0` |
@@ -25,7 +23,7 @@ nap mx 운영 담당자를 통해 다음 값을 준비합니다.
 - 미디에이션 네트워크를 사용한다면 해당 네트워크의 App ID 또는 Publisher Key
 - 운영 지면과 분리된 테스트용 지면
 
-공개 범용 테스트 ID는 제공되지 않습니다. 값이 없을 때 운영 ID를 임의로 사용하거나 다른 앱의 ID를 복사하지 마세요.
+공용 테스트 ID는 없습니다. 테스트 값이 없다고 운영 ID나 다른 앱의 ID를 대신 쓰지 마세요.
 
 플랫폼별 ID 형식도 다릅니다.
 
@@ -42,11 +40,11 @@ Dart API는 두 플랫폼을 함께 지원하기 위해 모두 `String`으로 �
 |---|---|---|
 | nap mx Core 초기화 | 담당 | 설정값과 호출 시점 결정 |
 | 광고 load/show/해제 | 담당 | 화면 수명주기와 UX 결정 |
-| SDK 광고 View/클릭 등록 | 담당 | View를 임의 분해하지 않음 |
-| CMP와 동의 UI | 자동 수행하지 않음 | 담당 |
-| iOS ATT 요청 | 자동 수행하지 않음 | 담당 |
-| 선택 네트워크 설치·App ID | 강제 설치하지 않음 | 담당 |
-| iOS 선택 네트워크 초기화 | 자동 수행하지 않음 | 담당 |
+| SDK 광고 뷰 표시 | 담당 | 광고 뷰를 그대로 배치 |
+| CMP와 동의 UI | 제공하지 않음 | 담당 |
+| iOS ATT 요청 | 제공하지 않음 | 담당 |
+| 선택 네트워크 설치·App ID | 포함하지 않음 | 담당 |
+| iOS 선택 네트워크 초기화 | 제공하지 않음 | 담당 |
 | 보상 금액·중복 지급 방지 | transaction ID 전달 | 담당 |
 
 ## 2. 플러그인 설치
@@ -58,7 +56,7 @@ dependencies:
   nap_mx_flutter:
     git:
       url: https://github.com/Nasmedia-Tech/nap_mx_flutter.git
-      ref: v0.1.8 # 검증된 공개 태그. main을 사용하지 마세요.
+      ref: v0.1.8 # 릴리스 태그를 지정합니다. main은 쓰지 마세요.
 ```
 
 ```bash
@@ -93,7 +91,7 @@ const rewardedId = String.fromEnvironment('NAP_MX_REWARDED_ID');
 
 ## 4. Android 설정
 
-플러그인은 nap mx Core를 포함합니다. 매체 앱은 실제 사용하는 선택 어댑터만 추가합니다.
+플러그인은 nap mx Core를 포함합니다. 매체 앱은 사용하는 선택 어댑터만 추가합니다.
 
 ### 4.1 선택 어댑터
 
@@ -104,7 +102,7 @@ dependencies {
     // nap mx 모듈 버전을 공식 검증 조합으로 정렬합니다.
     implementation(platform("io.github.nasmedia-tech:admixer-bom:2026.10.04"))
 
-    // 아래에서 실제 사용하는 네트워크만 남깁니다.
+    // 사용하는 네트워크만 남깁니다.
     implementation("io.github.nasmedia-tech:admixer-admanager")       // Google Ad Manager
     // implementation("io.github.nasmedia-tech:admixer-naveradmanager") // Naver Ad Manager
     // implementation("io.github.nasmedia-tech:admixer-adfit")          // Kakao AdFit
@@ -233,11 +231,11 @@ AGP 9에서 `android.builtInKotlin=false`인 경우에도 위 설정이 필요�
 | 9.0.1 / 9.1.0 | 내장 Kotlin(2.2.10) | 독립 Android 호스트의 플러그인 debug/release AAR, Android 단위 테스트 |
 | 9.0.1 / 9.1.0 | 외부 KGP 2.3.20, 내장 Kotlin·새 DSL 비활성화 | 독립 Android 호스트의 플러그인 debug/release AAR, Android 단위 테스트 |
 
-AGP 9 검증은 Flutter embedding을 제공하는 독립 Android 호스트에서 수행했습니다.
+AGP 9 조합은 Flutter 앱이 아닌 별도 Android 프로젝트에서 플러그인을 빌드해 확인했습니다.
 
 ### 4.5 Google SDK 입찰 광고 소스
 
-`admixer-admanager`를 사용한다면 Google SDK 입찰 광고 소스 어댑터를 함께 추가해야 최적 수익화가 가능합니다. 대상 광고 소스는 [Android 시작 가이드](https://napmx.github.io/#/android/native/getting-started)의 "Google SDK 입찰 광고 소스 설정"과 같습니다. 입찰 어댑터는 Google Mobile Ads SDK 안에서 동작하므로 Dart 코드나 `NapMxConfiguration` 설정은 필요 없고, 호스트 앱의 Gradle 의존성만 추가합니다.
+`admixer-admanager`를 사용한다면 Google SDK 입찰 광고 소스 어댑터도 추가하세요. 어댑터가 있어야 해당 광고 소스가 입찰에 참여합니다. 대상 광고 소스는 [Android 시작 가이드](https://napmx.github.io/#/android/native/getting-started)의 "Google SDK 입찰 광고 소스 설정"과 같습니다. 입찰 어댑터는 Google Mobile Ads SDK 안에서 동작하므로 Dart 코드나 `NapMxConfiguration` 설정은 필요 없고, 호스트 앱의 Gradle 의존성만 추가합니다.
 
 4.1에서 `play-services-ads`를 25.2.0으로 고정했으므로 어댑터도 **25.2.0 이하를 요구하는 버전**으로 명시해야 합니다. 버전 없이 최신 어댑터를 추가하면 어댑터는 25.3.0 이상을 기대하는데 `force`가 25.2.0으로 낮춰, 빌드는 성공해도 런타임에 어댑터 초기화나 입찰이 실패할 수 있습니다.
 
@@ -341,7 +339,7 @@ pod install --repo-update
 
 ### 5.3 Info.plist, ATT, SKAdNetwork
 
-ATT 요청은 플러그인이 자동으로 띄우지 않습니다. 추적 권한을 요청하는 앱만 사용자에게 실제 표시할 문구를 작성합니다.
+ATT 요청은 플러그인이 자동으로 띄우지 않습니다. 추적 권한을 요청하는 앱만 사용자에게 보여 줄 문구를 작성합니다.
 
 ```xml
 <!-- ATT를 요청하는 앱에만 추가합니다. -->
@@ -366,14 +364,13 @@ func sceneDidBecomeActive(_ scene: UIScene) {
 
     ATTrackingManager.requestTrackingAuthorization { status in
         // status를 앱의 개인정보 정책과 CMP 흐름에 반영합니다.
-        // 허용되지 않았다고 광고 요청을 성공으로 위장하지 않습니다.
     }
 }
 ```
 
-SKAdNetwork 목록은 선택한 네트워크와 버전에 따라 바뀌므로 이 저장소에 정적인 전체 목록을 복사하지 않습니다. 배포 전에 [공식 iOS 설정 가이드](https://napmx.github.io/#/ios/native/getting-started)의 최신 목록을 앱 `Info.plist`와 대조하세요.
+SKAdNetwork 목록은 선택한 네트워크와 버전에 따라 바뀌므로 이 문서에는 싣지 않습니다. 배포 전에 [공식 iOS 설정 가이드](https://napmx.github.io/#/ios/native/getting-started)의 최신 목록을 앱 `Info.plist`와 대조하세요.
 
-플러그인과 Core의 Privacy Manifest가 앱 선언 전체를 대신하지는 않습니다. 앱이 수집하는 데이터와 선택 네트워크 SDK를 포함해 Xcode Privacy Report를 검토해야 합니다.
+플러그인과 Core에는 Privacy Manifest가 들어 있지만, 앱이 수집하는 데이터와 선택 네트워크 SDK의 항목은 앱에서 작성해야 합니다. 배포 전에 Xcode Privacy Report를 확인하세요.
 
 ### 5.4 네트워크별 네이티브 초기화
 
@@ -385,7 +382,7 @@ iOS의 Google, Pangle, AppLovin, Unity, Naver 등은 각 SDK 초기화가 필요
 4. `AppDelegate` 또는 활성 `SceneDelegate`에서 선택 네트워크 SDK를 초기화합니다.
 5. Flutter에서 `NapMx.initialize`를 호출합니다.
 
-네트워크 SDK를 Flutter 실행 전에 초기화한다면, 해당 네트워크가 초기화 시 읽는 동의 값도 Swift에서 먼저 설정해야 합니다. 나중에 전달되는 Dart `NapMxPrivacySettings`가 이미 끝난 네트워크 초기화를 소급해 바꾼다고 가정하지 마세요. nap mx Core에 전달하는 기본 형태는 다음과 같습니다.
+네트워크 SDK를 Flutter 실행 전에 초기화한다면, 해당 네트워크가 초기화 시 읽는 동의 값도 Swift에서 먼저 설정해야 합니다. Dart의 `NapMxPrivacySettings`는 그보다 나중에 전달되므로, 이미 초기화된 네트워크에는 적용되지 않습니다. nap mx Core에 전달하는 기본 형태는 다음과 같습니다.
 
 ```swift
 import AdMixerMediation
@@ -393,7 +390,7 @@ import AdMixerMediation
 // AppDelegate.didFinishLaunchingWithOptions 안에서,
 // CMP/저장된 사용자 선택을 읽은 뒤 네트워크 초기화보다 먼저 실행합니다.
 let consent = AMMConsent()
-consent.gdprConsent = .granted       // 예시일 뿐, 실제 CMP 결과를 사용
+consent.gdprConsent = .granted       // 예시 값입니다. CMP 결과를 넣으세요.
 consent.usSaleConsent = .denied      // denied = 판매/공유 옵트아웃
 consent.childDirected = .denied      // granted = 아동 대상
 consent.underAgeOfConsent = .denied  // granted = 동의 연령 미만
@@ -404,13 +401,13 @@ AMMediation.shared.setConsent(consent)
 // 해당 SDK import와 초기화 코드도 넣지 않습니다.
 ```
 
-위 `.granted`/`.denied`는 코드 형태를 보여주기 위한 예시이며 모든 사용자의 기본값이 아닙니다. CMP 결과가 없으면 동의로 바꾸지 않습니다. Naver Ad Manager는 공식 가이드에 따라 setup 후 같은 consent를 다시 설정해야 할 수 있습니다.
+CMP 결과가 없을 때 `.granted`로 채우지 마세요. Naver Ad Manager는 공식 가이드에 따라 setup 후 같은 consent를 다시 설정해야 할 수 있습니다.
 
 이 플러그인의 `mediation` 맵은 iOS 네트워크 초기화를 대신하지 않습니다. iOS에서 비어 있지 않은 `mediation`을 전달하면 `mediation_configuration_unsupported` 오류를 반환합니다.
 
 ### 5.5 Google SDK 입찰 광고 소스
 
-`AdMixerMediationGAM`을 사용한다면 Google SDK 입찰 광고 소스 어댑터를 함께 추가해야 최적 수익화가 가능합니다. 대상 광고 소스, SPM Repository URL과 고정 버전은 [iOS 시작 가이드](https://napmx.github.io/#/ios/native/getting-started)의 "1-3. Google 네트워크 - SDK 입찰 광고 소스 설정"과 같습니다. Dart 코드나 `NapMxConfiguration` 설정은 필요 없고, 호스트 앱의 `ios/` 프로젝트에만 추가합니다. 5.1·5.2에서 고른 방식 하나로만 추가하고, SPM과 CocoaPods에 같은 어댑터를 중복 연결하지 마세요.
+`AdMixerMediationGAM`을 사용한다면 Google SDK 입찰 광고 소스 어댑터도 추가하세요. 어댑터가 있어야 해당 광고 소스가 입찰에 참여합니다. 대상 광고 소스, SPM Repository URL과 고정 버전은 [iOS 시작 가이드](https://napmx.github.io/#/ios/native/getting-started)의 "1-3. Google 네트워크 - SDK 입찰 광고 소스 설정"과 같습니다. Dart 코드나 `NapMxConfiguration` 설정은 필요 없고, 호스트 앱의 `ios/` 프로젝트에만 추가합니다. 5.1·5.2에서 고른 방식 하나로만 추가하고, SPM과 CocoaPods에 같은 어댑터를 중복 연결하지 마세요.
 
 CocoaPods 프로젝트는 `ios/Podfile`의 `Runner` 타깃에 추가합니다.
 
@@ -497,7 +494,7 @@ import 'package:nap_mx_flutter/nap_mx_flutter.dart';
 
 Future<void> initializeAds() async {
   // 1) CMP 결과가 없으면 임의로 granted를 넣지 않습니다.
-  // unspecified는 "동의"가 아니라, 플러그인이 해당 값을 설정하지 않는 상태입니다.
+  // unspecified는 값을 전달하지 않는다는 뜻이며, 동의로 처리되지 않습니다.
   const privacy = NapMxPrivacySettings(
     gdprConsent: NapMxConsentStatus.unspecified,
     usSaleConsent: NapMxConsentStatus.unspecified,
@@ -520,17 +517,18 @@ Future<void> initializeAds() async {
       logLevel: NapMxLogLevel.error,
 
       // Android 공식 SDK의 테스트 모드입니다.
-      // iOS에는 대응하는 전역 API가 없어 true로 설정하면 초기화가 실패합니다.
-      // 공용 운영 코드는 false로 두고 발급받은 테스트 지면을 사용하세요.
+      // iOS에는 같은 API가 없어 true로 설정하면 초기화가 실패합니다.
+      // testDeviceIds, usPrivacyString도 Android 전용이라 iOS에서 값을 넣으면 실패합니다.
+      // 공용 코드는 false로 두고 발급받은 테스트 지면을 사용하세요.
       testMode: false,
     ),
   );
 }
 ```
 
-동시에 같은 설정으로 `NapMx.initialize`를 여러 번 호출하면 하나의 초기화 작업을 공유합니다. 이미 다른 설정으로 초기화된 뒤 재호출하면 `StateError`가 발생합니다. 계정 전환처럼 설정을 바꿔야 한다면 앱 프로세스를 새로 시작하는 구조로 설계하세요.
+동시에 같은 설정으로 `NapMx.initialize`를 여러 번 호출하면 하나의 초기화 작업을 공유합니다. 이미 다른 설정으로 초기화된 뒤 재호출하면 `StateError`가 발생합니다. 계정 전환처럼 설정을 바꿔야 한다면 앱을 다시 시작해야 합니다.
 
-### 6.1 같은 포맷의 여러 지면 등록 (0.1.4)
+### 6.1 같은 포맷의 여러 지면 등록
 
 `adUnitIds`는 기존 `Map<NapMxAdFormat, String>` 타입을 유지합니다. 같은 포맷의 지면이 여러 개라면 `additionalAdUnitIds: List<String>`에 추가 ID를 등록하세요. 두 컬렉션을 합쳐 공백을 제거하고 중복 ID를 제거한 뒤 Android와 iOS 네이티브 SDK 초기화에 전달합니다. iOS에서는 추가 ID도 정수 문자열이어야 합니다.
 
@@ -552,9 +550,9 @@ await placementB.load();
 
 컨트롤러와 `NapMxAdView`에는 사용할 지면 ID를 명시해야 합니다. `adUnitIdFor(format)`은 기존 맵의 값만 조회하며 추가 목록에서 ID를 선택하지 않습니다. 두 컬렉션이 모두 비었거나 빈 ID가 포함되면 `ArgumentError`가 발생합니다.
 
-추가 목록의 순서와 중복은 Dart의 동일 설정 판정에 영향을 주지 않습니다. 초기화 이후 목록을 변경해 재호출하는 방식으로 ID를 추가할 수는 없으므로 사용할 지면을 처음에 모두 등록하세요. 미등록 ID도 load 시 네이티브 SDK로 전달되지만 실제 로드 성공 여부는 검증되지 않았습니다.
+추가 목록의 순서와 중복은 Dart의 동일 설정 판정에 영향을 주지 않습니다. 초기화 이후 목록을 변경해 재호출하는 방식으로 ID를 추가할 수는 없으므로 사용할 지면을 처음에 모두 등록하세요. 등록하지 않은 ID로 요청하면 SDK에 그대로 전달되지만, 정상 동작은 보장하지 않습니다.
 
-초기화 실패는 성공으로 간주하지 말고 광고 기능을 비활성화합니다.
+초기화에 실패하면 광고 영역을 숨기고, 앱의 나머지 기능은 그대로 동작하게 합니다.
 
 ```dart
 try {
@@ -562,7 +560,7 @@ try {
 } on NapMxError catch (error) {
   // 키 자체는 로그에 남기지 않습니다.
   debugPrint('nap mx init failed: ${error.code} / ${error.message}');
-  // 광고가 없는 상태로 앱의 본 기능은 계속 제공하도록 처리합니다.
+  // 광고 없이 앱의 나머지 기능은 계속 동작하게 합니다.
 }
 ```
 
@@ -575,8 +573,7 @@ late final StreamSubscription<NapMxEvent> _allAdEvents;
 
 void startAdMonitoring() {
   _allAdEvents = NapMx.events.listen((event) {
-    // network는 SDK 콜백에서 실제 값을 제공한 경우에만 존재합니다.
-    // null일 때 특정 네트워크라고 추정해서 기록하지 않습니다.
+    // network는 SDK가 응답 네트워크를 알려 준 경우에만 값이 있습니다.
     debugPrint(
       'type=${event.type.name}, '
       'format=${event.format?.name}, '
@@ -599,7 +596,7 @@ debugPrint('plugin=${info.pluginVersion}, sdk=${info.sdkVersion ?? "unknown"}');
 
 ## 8. 배너·네이티브·인라인 동영상
 
-세 포맷은 실제 네이티브 SDK View를 `PlatformView`로 표시합니다. 네이티브 광고의 텍스트·이미지를 Flutter 위젯으로 분해해 다시 조립하면 SDK의 노출·클릭 등록을 우회할 수 있으므로 그렇게 사용하지 않습니다.
+세 포맷은 SDK의 광고 뷰를 Flutter `PlatformView`로 그대로 표시합니다. 네이티브 광고의 제목·이미지를 꺼내 Flutter 위젯으로 다시 만들면 SDK가 노출과 클릭을 집계하지 못하므로, SDK 템플릿을 그대로 사용하세요.
 
 아래 위젯은 생성, 로드, 취소, 해제를 모두 포함한 예입니다.
 
@@ -632,7 +629,7 @@ class _BannerSlotState extends State<BannerSlot> {
           format: NapMxAdFormat.banner,
           adUnitId: widget.adUnitId,
 
-          // 배너 기본 높이는 50입니다. 광고 슬롯의 실제 제약 안에 배치합니다.
+          // 배너 기본 높이는 50입니다. 광고 슬롯 크기 안에 배치합니다.
           // 무한 높이 ListView 안에서는 SizedBox/ConstrainedBox를 함께 사용하세요.
           height: 50,
           autoLoad: false,
@@ -659,7 +656,7 @@ class _BannerSlotState extends State<BannerSlot> {
   @override
   void dispose() {
     // State.dispose는 async가 아니므로 기다리지 않고 정리를 시작합니다.
-    // 이후 네이티브 콜백은 controller가 폐기 상태에서 무시합니다.
+    // dispose 이후 도착하는 콜백은 무시됩니다.
     unawaited(_events?.cancel());
     unawaited(_controller?.dispose());
     super.dispose();
@@ -730,7 +727,7 @@ class InterstitialOwner {
 
 ## 10. 리워드 광고와 중복 지급 방지
 
-보상은 `show()` 성공, 동영상 완료 추정, 화면 닫힘 이벤트로 지급하지 않습니다. 오직 `NapMxEventType.rewarded`에서만 지급합니다.
+보상은 `NapMxEventType.rewarded` 이벤트를 받았을 때만 지급합니다. `show()` 성공, 동영상 완료, 광고 닫힘은 보상 근거가 아닙니다.
 
 ```dart
 import 'dart:async';
@@ -754,7 +751,7 @@ final subscription = rewarded.events.listen((event) {
       // 메모리 Set만으로는 앱 재시작/다중 기기 중복을 막을 수 없습니다.
       unawaited(rewardRepository.grantOnce(transactionId));
     }
-    // 보상을 받았으면 더 기다릴 이유가 없습니다.
+    // 보상을 받았으면 바로 정리합니다.
     if (!finished.isCompleted) finished.complete();
   }
 
@@ -783,7 +780,7 @@ try {
 
 보상 조건을 채우지 못한 사용자는 닫힘만 받습니다. 이때는 위 유예 시간이 지난 뒤 정리되며 지급은 일어나지 않습니다. 지급 누락을 완전히 막아야 한다면 S2S Reward Callback을 함께 사용하고 `transaction_id`를 최종 기준으로 삼으세요.
 
-보상 수량과 종류는 플러그인이 만들지 않습니다. 매체의 상품 정책과 서버 검증 결과를 기준으로 지급하세요. 빈 transaction ID가 전달될 가능성에 대한 정책도 백엔드와 합의하고, 임의 ID를 SDK transaction ID로 위장하지 마세요.
+보상 수량과 종류는 플러그인이 만들지 않습니다. 매체의 상품 정책과 서버 검증 결과를 기준으로 지급하세요. transaction ID가 빈 값으로 올 때의 처리 방식도 서버 담당자와 정해 두세요.
 
 ## 11. 이벤트 의미
 
@@ -795,7 +792,7 @@ try {
 | `loadFailed` | 로드 실패 | 오류 기록 후 UI 복구 |
 | `shown` | SDK 표시 콜백 수신. iOS 배너·네이티브는 광고 영역이 50% 이상 보일 때, nap mx 인라인 동영상은 실제 재생이 시작될 때 전달됨 | 노출 상태 기록 |
 | `showFailed` | 표시 실패(인라인 뷰 포함). 전면 광고가 화면에 뜨기 전 실패하면 플러그인이 광고를 바로 해제함 | controller 해제 후 필요할 때 새 요청 |
-| `clicked` | SDK 클릭 콜백 수신 | 분석 기록만 수행, 클릭 자동화 금지 |
+| `clicked` | SDK 클릭 콜백 수신 | 클릭 기록 |
 | `completed` | 동영상 완료 콜백 | 보상 지급 근거로 사용하지 않음 |
 | `skipped` | 동영상 건너뜀 | UI 상태 복구 |
 | `rewarded` | SDK 보상 콜백 | transaction ID 기준 1회 지급 |
@@ -803,7 +800,7 @@ try {
 | `cancelled` | 요청 취소 | 필요할 때 새 controller 생성 |
 | `disposed` | 네이티브 참조 해제 | controller 재사용 금지 |
 
-`network`, `elapsedMilliseconds`, `nativeCode`처럼 SDK가 제공하지 않은 필드는 `null`일 수 있습니다. 추정값으로 채우지 마세요.
+`network`, `elapsedMilliseconds`, `nativeCode`는 SDK가 값을 주지 않으면 `null`입니다.
 
 ## 12. 오류 처리
 
@@ -814,8 +811,7 @@ try {
   await controller.load();
 } on NapMxError catch (error) {
   if (error.isNoFill) {
-    // no-fill은 정상적인 광고 재고 부족일 수 있습니다.
-    // 성공으로 처리하거나 즉시 무한 재요청하지 않습니다.
+    // no-fill은 보여 줄 광고가 없다는 뜻입니다. 바로 재요청하지 말고 슬롯을 숨깁니다.
     hideAdSlotTemporarily();
   } else if (error.isTimeout) {
     showContentWithoutAd();
@@ -849,11 +845,11 @@ try {
 ## 13. 화면 및 앱 수명주기
 
 - Android에서는 Flutter Activity가 재생성될 수 있습니다. 플러그인은 새 Activity를 다시 연결하지만, 이전 화면의 controller를 새 화면에서 재사용하지 않는 구성이 안전합니다.
-- iOS에서는 foreground-active Scene의 ViewController가 필요합니다. 앱 시작 전이나 백그라운드에서 전면 광고를 표시하지 않습니다.
+- iOS는 현재 활성화된 화면(Scene)의 ViewController에 광고를 표시합니다. 앱이 시작되기 전이나 백그라운드에 있을 때는 전면 광고를 표시하지 않습니다.
 - 화면을 나갈 때 이벤트 구독과 controller를 함께 해제합니다.
 - 화면 재진입 또는 전면 광고 `show()` 이후 다음 광고에는 새 controller를 만듭니다.
-- 앱 resume 직후 자동으로 광고를 무한 재요청하거나 자동 클릭하지 않습니다.
-- 네트워크 전환, no-fill, timeout 재시도는 지수 backoff와 최대 횟수를 둔 매체 정책으로 관리합니다.
+- 앱이 다시 열릴 때마다 광고를 반복 요청하지 않습니다.
+- 네트워크 전환, no-fill, timeout 뒤 재시도는 간격을 점점 늘리고 최대 횟수를 정해 둡니다.
 
 ## 14. Sample 앱 실행
 
@@ -875,12 +871,10 @@ Sample 앱에서 다음을 확인할 수 있습니다.
 - 초기화 전 요청 차단
 - 포맷별 load/show/dispose 상태
 - 오류 코드와 native code
-- SDK가 실제 전달한 네트워크 이름
+- SDK가 알려 준 응답 네트워크
 - 요청 소요 시간
 - reward transaction ID
 - 다크 모드, SafeArea, 작은 화면과 글자 확대
-
-Mock은 사용하지 않습니다.
 
 ## 15. 출시 전 체크리스트
 
@@ -891,12 +885,12 @@ Mock은 사용하지 않습니다.
 - [ ] Google을 사용한다면 입찰 광고 소스를 호환 버전으로 추가하고 Debug Options Menu로 어댑터 상태를 확인했다.
 - [ ] 개인정보 선택을 SDK 초기화보다 먼저 확정했다.
 - [ ] ATT 요청 여부와 문구를 앱 정책에 맞게 결정했다.
-- [ ] Privacy Manifest와 SKAdNetwork 목록을 실제 의존성 기준으로 검토했다.
+- [ ] Privacy Manifest와 SKAdNetwork 목록을 사용하는 의존성 기준으로 검토했다.
 - [ ] 배너·네이티브·동영상이 작은 화면과 글자 확대에서 잘리지 않는다.
 - [ ] 전면 광고가 활성 화면에서 `load → show` 순서로 동작한다.
 - [ ] 보상을 `rewarded` 콜백에서만 지급하고 transaction ID 중복을 차단했다.
-- [ ] 화면 종료·재진입·백그라운드 복귀 후 늦은 콜백이 문제를 만들지 않는다.
-- [ ] no-fill/timeout에 무한 재요청하지 않는다.
+- [ ] 화면 종료·재진입·백그라운드 복귀 후에도 광고가 정상 동작한다.
+- [ ] no-fill/timeout 뒤 바로 반복 재요청하지 않는다.
 - [ ] 두 플랫폼 실기기에서 테스트 지면으로 최종 검증했다.
 
 문제가 재현되면 플랫폼, 플러그인 버전, 네이티브 SDK 버전, 광고 포맷, 오류 code/nativeCode, 재현 순서를 정리하되 Media Key와 AdUnit ID 원문은 공개 이슈에 첨부하지 마세요.
