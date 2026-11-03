@@ -40,21 +40,39 @@ final class NapMxError implements Exception {
 
   /// Converts a platform-channel failure into the public nap mx error model.
   ///
-  /// Android uses signed `0x80000008`/`0x80000004` for no-fill/timeout,
-  /// while iOS uses `-1`/`-8`. The string code is also checked for a
-  /// plugin-generated timeout.
+  /// Android (`admixer-ssp` 2.5.0+) uses the common codes `-20`/`-22` for
+  /// no-fill/timeout, while iOS uses `-1`/`-8`. Android `-1` is an invalid ad
+  /// unit, so the codes are read per platform. The pre-2.5.0 Android values
+  /// `0x80000008`/`0x80000004` are still recognized. The string code is also
+  /// checked for a plugin-generated timeout.
   factory NapMxError.fromPlatformException(PlatformException error) {
     final nativeCode = error.details is int ? error.details as int : null;
+    final android = defaultTargetPlatform == TargetPlatform.android;
     return NapMxError(
       code: error.code,
       message: error.message ?? 'nap mx platform error',
       nativeCode: nativeCode,
-      isNoFill: nativeCode == -1 || nativeCode == -2147483640,
+      isNoFill: android
+          ? nativeCode == _androidNoAds || nativeCode == _androidLegacyNoAds
+          : nativeCode == _iosNoFill,
       isTimeout: error.code == 'timeout' ||
-          nativeCode == -8 ||
-          nativeCode == -2147483644,
+          (android
+              ? nativeCode == _androidTimeout ||
+                  nativeCode == _androidLegacyTimeout
+              : nativeCode == _iosTimeout),
     );
   }
+
+  /// `AdMixer.AX_ERR_NO_ADS` / `AX_ERR_TIMEOUT` (Android 2.5.0+).
+  static const int _androidNoAds = -20;
+  static const int _androidTimeout = -22;
+
+  /// Signed `0x80000008` / `0x80000004` (Android 2.4.x and earlier).
+  static const int _androidLegacyNoAds = -2147483640;
+  static const int _androidLegacyTimeout = -2147483644;
+
+  static const int _iosNoFill = -1;
+  static const int _iosTimeout = -8;
 
   /// Stable plugin error category such as `load_failed` or `not_loaded`.
   final String code;

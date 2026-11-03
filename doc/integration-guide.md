@@ -9,8 +9,8 @@
 | 항목 | 버전 |
 |---|---|
 | Flutter CI | 3.44.9 |
-| Android Core | `admixer-ssp:2.4.0` |
-| Android BOM | `admixer-bom:2026.10.04` |
+| Android Core | `admixer-ssp:2.5.0` |
+| Android BOM | `admixer-bom:2026.11.01` |
 | iOS Mediation | `AdMixerMediation` 2.6.0 |
 | iOS Core | `AdMixer` 1.5.1 |
 
@@ -100,7 +100,7 @@ const rewardedId = String.fromEnvironment('NAP_MX_REWARDED_ID');
 ```kotlin
 dependencies {
     // nap mx 모듈 버전을 공식 검증 조합으로 정렬합니다.
-    implementation(platform("io.github.nasmedia-tech:admixer-bom:2026.10.04"))
+    implementation(platform("io.github.nasmedia-tech:admixer-bom:2026.11.01"))
 
     // 사용하는 네트워크만 남깁니다.
     implementation("io.github.nasmedia-tech:admixer-admanager")       // Google Ad Manager
@@ -209,7 +209,7 @@ Naver Ad Manager의 `com.naver.gfpsdk.PUBLISHER_CD`는 공식 어댑터에서 �
 | Google Ad Manager, Naver Ad Manager | 23 |
 | AppLovin, GMA NextGen | 24 |
 
-플러그인은 Java 17로 빌드되며 호스트의 AGP·Kotlin 버전을 사용합니다. Android 기준은 AGP 8.10.1 이상(compile SDK 36), Kotlin 2.1.0 이상이며 Kotlin 2.2.10을 권장합니다. SDK 2.4.0은 `kotlin-stdlib:2.2.10`에 의존하므로 stdlib를 호스트 컴파일러 버전으로 강제 낮추지 마세요. 선택 어댑터를 추가하면 해당 어댑터의 Kotlin·AGP 요구사항도 확인해야 합니다.
+플러그인은 Java 17로 빌드되며 호스트의 AGP·Kotlin 버전을 사용합니다. Android 기준은 AGP 8.10.1 이상(compile SDK 36), Kotlin 2.1.0 이상이며 Kotlin 2.2.10을 권장합니다. SDK 2.5.0은 `kotlin-stdlib:2.2.10`에 의존하므로 stdlib를 호스트 컴파일러 버전으로 강제 낮추지 마세요. 선택 어댑터를 추가하면 해당 어댑터의 Kotlin·AGP 요구사항도 확인해야 합니다.
 
 AGP 8 호스트의 `android/settings.gradle.kts`에는 다음처럼 Kotlin 플러그인 버전을 선언합니다(AGP 선언과 Flutter 플러그인 로더 등 기존 설정은 유지).
 
@@ -242,7 +242,7 @@ AGP 9 조합은 Flutter 앱이 아닌 별도 Android 프로젝트에서 플러�
 ```kotlin
 // android/app/build.gradle.kts
 dependencies {
-    implementation(platform("io.github.nasmedia-tech:admixer-bom:2026.10.04"))
+    implementation(platform("io.github.nasmedia-tech:admixer-bom:2026.11.01"))
     implementation("io.github.nasmedia-tech:admixer-admanager")
 
     // Google SDK 입찰 광고 소스 — play-services-ads 25.2.0 호환 버전
@@ -840,7 +840,7 @@ try {
 | `mediation_configuration_unsupported` | iOS에서 Android용 mediation 맵을 전달함 |
 | `unsupported_privacy` | Android에서 지원하지 않는 under-age 값을, iOS에서 `usPrivacyString`을 전달함 |
 
-어댑터 누락을 포함한 네이티브 실패는 보통 `load_failed`와 플랫폼별 `nativeCode`로 전달됩니다. Android의 `0x8000000x` 계열과 iOS의 `-1`부터 `-8` 코드는 각각 [공식 Android](https://napmx.github.io/#/android/native/error-codes)와 [공식 iOS](https://napmx.github.io/#/ios/native/getting-started) 오류표를 확인하세요.
+어댑터 누락을 포함한 네이티브 실패는 보통 `load_failed`와 플랫폼별 `nativeCode`로 전달됩니다. Android의 공통 코드(`-1`~`-31`, 예: no-fill `-20`)와 iOS의 `-1`부터 `-8` 코드는 각각 [공식 Android](https://napmx.github.io/#/android/native/error-codes)와 [공식 iOS](https://napmx.github.io/#/ios/native/getting-started) 오류표를 확인하세요.
 
 ## 13. 화면 및 앱 수명주기
 

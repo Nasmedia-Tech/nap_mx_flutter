@@ -39,7 +39,7 @@ void main() {
         return <String, Object?>{
           'platform': 'test',
           'pluginVersion': '0.1.8',
-          'sdkVersion': '2.4.0',
+          'sdkVersion': '2.5.0',
         };
       }
       return null;
@@ -184,7 +184,7 @@ void main() {
       'error': <Object?, Object?>{
         'code': 'load_failed',
         'message': 'No ads',
-        'nativeCode': -2147483640,
+        'nativeCode': -20,
         'isNoFill': true,
       },
     });
@@ -194,30 +194,37 @@ void main() {
   });
 
   test('platform failures use the typed no-fill and timeout flags', () {
-    final androidNoFill = NapMxError.fromPlatformException(
-      PlatformException(
-        code: 'load_failed',
-        message: 'No ads',
-        details: -2147483640,
-      ),
-    );
-    final iosNoFill = NapMxError.fromPlatformException(
-      PlatformException(code: 'load_failed', details: -1),
-    );
-    final androidTimeout = NapMxError.fromPlatformException(
-      PlatformException(code: 'load_failed', details: -2147483644),
-    );
-    final pluginTimeout = NapMxError.fromPlatformException(
-      PlatformException(
-        code: 'timeout',
-        message: 'Timed out',
-        details: -8,
-      ),
-    );
+    NapMxError fail(TargetPlatform platform, int nativeCode,
+        [String code = 'load_failed']) {
+      debugDefaultTargetPlatformOverride = platform;
+      try {
+        return NapMxError.fromPlatformException(
+          PlatformException(code: code, message: 'x', details: nativeCode),
+        );
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    }
 
-    expect(androidNoFill.isNoFill, isTrue);
-    expect(iosNoFill.isNoFill, isTrue);
-    expect(androidTimeout.isTimeout, isTrue);
+    const android = TargetPlatform.android;
+    const iOS = TargetPlatform.iOS;
+
+    // Android admixer-ssp 2.5.0+ common codes.
+    expect(fail(android, -20).isNoFill, isTrue);
+    expect(fail(android, -22).isTimeout, isTrue);
+    // Android -1 is AX_ERR_ADUNIT, not no-fill.
+    expect(fail(android, -1).isNoFill, isFalse);
+    // Pre-2.5.0 Android values are still recognized.
+    expect(fail(android, -2147483640).isNoFill, isTrue);
+    expect(fail(android, -2147483644).isTimeout, isTrue);
+
+    // iOS codes.
+    expect(fail(iOS, -1).isNoFill, isTrue);
+    expect(fail(iOS, -8).isTimeout, isTrue);
+    expect(fail(iOS, -20).isNoFill, isFalse);
+
+    // Plugin-generated timeout.
+    final pluginTimeout = fail(iOS, -8, 'timeout');
     expect(pluginTimeout.isNoFill, isFalse);
     expect(pluginTimeout.isTimeout, isTrue);
   });
