@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.9
 
 - Update Android Core to 2.5.0 and the Android adapter examples to BOM
   2026.11.01. A rewarded video served by nap mx now plays to the end before
