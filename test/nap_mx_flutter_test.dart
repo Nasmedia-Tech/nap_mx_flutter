@@ -212,11 +212,9 @@ void main() {
     // Android admixer-ssp 2.5.0+ common codes.
     expect(fail(android, -20).isNoFill, isTrue);
     expect(fail(android, -22).isTimeout, isTrue);
-    // Android -1 is AX_ERR_ADUNIT, not no-fill.
+    // Android -1 is AX_ERR_ADUNIT and -23 is AX_ERR_SHOW_FAILED, not no-fill.
     expect(fail(android, -1).isNoFill, isFalse);
-    // Pre-2.5.0 Android values are still recognized.
-    expect(fail(android, -2147483640).isNoFill, isTrue);
-    expect(fail(android, -2147483644).isTimeout, isTrue);
+    expect(fail(android, -23).isNoFill, isFalse);
 
     // iOS codes.
     expect(fail(iOS, -1).isNoFill, isTrue);

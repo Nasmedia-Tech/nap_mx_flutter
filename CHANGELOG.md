@@ -4,10 +4,10 @@
   2026.11.01. A rewarded video served by nap mx now plays to the end before
   its close button appears, and the reward arrives on completion.
 - Android: Core 2.5.0 changes the native error code values (no-fill `-20`,
-  timeout `-22`, invalid ad unit `-1`). `isNoFill` and `isTimeout` read the
-  codes per platform, so an Android invalid ad unit is no longer reported as
-  no-fill; the pre-2.5.0 Android values are still recognized. Apps that store
-  or compare `nativeCode` numbers must use the new values.
+  timeout `-22`, invalid ad unit `-1`, show failure `-23`). `isNoFill` and
+  `isTimeout` read the codes per platform, so an Android invalid ad unit is not
+  reported as no-fill. Apps that store or compare `nativeCode` numbers must use
+  the new values.
 
 ## 0.1.8
 
