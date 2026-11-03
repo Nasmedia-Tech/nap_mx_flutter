@@ -68,6 +68,19 @@ class NapMxFullscreenTest {
                                     }
                                     verify(failedLoad).error("load_failed", "No ads", AdMixer.AX_ERR_NO_ADS)
                                     assertEquals(true, (events.last()["error"] as Map<*, *>)["isNoFill"])
+                                    // Core 2.5.0: an invalid ad unit (AX_ERR_ADUNIT = -1) is neither no-fill nor timeout.
+                                    val failedUnit = mock<MethodChannel.Result>()
+                                    plugin.onMethodCall(MethodCall("loadFullscreen", mapOf(
+                                        "requestId" to "failedUnit", "format" to format, "adUnitId" to "456",
+                                    )), failedUnit)
+                                    when (val callback = loadCallback) {
+                                        is AMMInterstitialLoadCallback -> callback.onFailLoadInterstitial(AdMixer.AX_ERR_ADUNIT, "Invalid ad unit")
+                                        is AMMVideoInterstitialLoadCallback -> callback.onFailLoadVideoInterstitial(AdMixer.AX_ERR_ADUNIT, "Invalid ad unit")
+                                        is AMMRewardVideoLoadCallback -> callback.onFailLoadReward(AdMixer.AX_ERR_ADUNIT, "Invalid ad unit")
+                                    }
+                                    verify(failedUnit).error("load_failed", "Invalid ad unit", AdMixer.AX_ERR_ADUNIT)
+                                    assertEquals(false, (events.last()["error"] as Map<*, *>)["isNoFill"])
+                                    assertEquals(false, (events.last()["error"] as Map<*, *>)["isTimeout"])
                                     val load = mock<MethodChannel.Result>()
                                     plugin.onMethodCall(MethodCall("loadFullscreen", mapOf(
                                         "requestId" to "request", "format" to format, "adUnitId" to "456",
@@ -102,9 +115,11 @@ class NapMxFullscreenTest {
                                     verify(show, never()).success(anyOrNull())
                                     val listener = capture.firstValue
                                     if (showFails) {
-                                        listener.onAdShowFailed(null, AdNetworkType.ADMIXER, AdMixer.AX_ERR_NO_ADS, "Show failed")
-                                        verify(show).error("show_failed", "Show failed", AdMixer.AX_ERR_NO_ADS)
+                                        // Core 2.5.0 reports every show-stage failure as AX_ERR_SHOW_FAILED (-23).
+                                        listener.onAdShowFailed(null, AdNetworkType.ADMIXER, AdMixer.AX_ERR_SHOW_FAILED, "Show failed")
+                                        verify(show).error("show_failed", "Show failed", AdMixer.AX_ERR_SHOW_FAILED)
                                         assertEquals("showFailed", events.last()["type"])
+                                        assertEquals(false, (events.last()["error"] as Map<*, *>)["isNoFill"])
                                         // Nothing was presented, so the plugin releases the request
                                         // itself instead of waiting for the app to dispose it.
                                         val retry = mock<MethodChannel.Result>()
