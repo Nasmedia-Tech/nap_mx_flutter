@@ -1,3 +1,12 @@
+## Unreleased
+
+- Update iOS Mediation to 2.6.1 (iOS Core stays at 1.5.1). Native ads from
+  GAM, Pangle, NAM, and nap mx now report `shown` as soon as they are at least
+  50% visible, without waiting for the network's impression callback, so a
+  missed callback no longer stops auto refresh. Banner and native auto refresh
+  no longer replaces an ad that was attached hidden or off screen before its
+  impression. Android keeps the previous native timing until its SDK update.
+
 ## 0.1.9
 
 - Update Android Core to 2.5.0 and the Android adapter examples to BOM
