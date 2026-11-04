@@ -11,7 +11,7 @@
 | Flutter CI | 3.44.9 |
 | Android Core | `admixer-ssp:2.5.0` |
 | Android BOM | `admixer-bom:2026.11.01` |
-| iOS Mediation | `AdMixerMediation` 2.6.0 |
+| iOS Mediation | `AdMixerMediation` 2.6.1 |
 | iOS Core | `AdMixer` 1.5.1 |
 
 ## 1. 시작 전 준비
@@ -293,7 +293,7 @@ Android 네이티브 가이드와 마찬가지로 입찰 어댑터를 위한 별
 
 ## 5. iOS 설정
 
-플러그인의 Swift Package는 필수 Mediation 2.6.0과 Core 1.5.1을 함께 가져옵니다. 선택 네트워크 SDK는 매체 앱에서 추가합니다.
+플러그인의 Swift Package는 필수 Mediation 2.6.1과 Core 1.5.1을 함께 가져옵니다. 선택 네트워크 SDK는 매체 앱에서 추가합니다.
 
 ### 5.1 Swift Package Manager
 
@@ -790,7 +790,7 @@ try {
 | `loadStarted` | 요청 시작 | 로딩 상태 표시 |
 | `loaded` | 표시 가능한 광고 로드 | 전면 광고 Show 버튼 활성화 |
 | `loadFailed` | 로드 실패 | 오류 기록 후 UI 복구 |
-| `shown` | SDK 표시 콜백 수신. iOS 배너·네이티브는 광고 영역이 50% 이상 보일 때, nap mx 인라인 동영상은 실제 재생이 시작될 때 전달됨 | 노출 상태 기록 |
+| `shown` | SDK 표시 콜백 수신. iOS 배너·네이티브는 광고 영역이 50% 이상 보일 때 전달되며, 그보다 먼저 네트워크의 노출 콜백이 오면 그 시점에 전달됨(네트워크 콜백은 광고가 숨겨진 상태에서도 올 수 있음). nap mx 인라인 동영상은 실제 재생이 시작될 때 전달됨 | 노출 상태 기록 |
 | `showFailed` | 표시 실패(인라인 뷰 포함). 전면 광고가 화면에 뜨기 전 실패하면 플러그인이 광고를 바로 해제함 | controller 해제 후 필요할 때 새 요청 |
 | `clicked` | SDK 클릭 콜백 수신 | 클릭 기록 |
 | `completed` | 동영상 완료 콜백 | 보상 지급 근거로 사용하지 않음 |
