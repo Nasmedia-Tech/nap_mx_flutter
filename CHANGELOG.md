@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.10
 
 - Update iOS Mediation to 2.6.1 (iOS Core stays at 1.5.1). Android behavior
   is unchanged until its SDK update.

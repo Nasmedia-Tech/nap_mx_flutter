@@ -17,7 +17,7 @@ Android와 iOS의 [nap mx SDK](https://napmx.github.io/)를 같은 타입 기반
 
 ## 요구사항과 고정 버전
 
-`v0.1.9` 기준입니다.
+`v0.1.10` 기준입니다.
 
 | 항목 | 최소/고정 버전 |
 |---|---|
@@ -69,7 +69,7 @@ dependencies:
   nap_mx_flutter:
     git:
       url: https://github.com/Nasmedia-Tech/nap_mx_flutter.git
-      ref: v0.1.9
+      ref: v0.1.10
 ```
 
 ```bash
