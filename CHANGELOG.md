@@ -1,3 +1,18 @@
+## Unreleased
+
+- Update Android Core to 2.5.1 and the Android adapter examples to BOM
+  2026.11.02.
+- Android: Unity Ads rewarded and interstitial, Naver Ad Manager rewarded and
+  interstitial, and Google Ad Manager interstitial ads now load. They used to
+  fail at once with an "Activity context required" error because the plugin
+  loads full-screen ads with the application context. To get this fix, update
+  your app's adapters to BOM 2026.11.02 (`admixer-unity` 2.1.1,
+  `admixer-naveradmanager` 2.2.1, `admixer-admanager` 2.2.1).
+- Android: a Naver Ad Manager native carousel slot tap now reports one click
+  instead of two.
+- Android: a native video taller than a fixed media area is letterboxed
+  instead of stretched.
+
 ## 0.1.10
 
 - Update iOS Mediation to 2.6.1 (iOS Core stays at 1.5.1). Android behavior

@@ -23,7 +23,7 @@ Android와 iOS의 [nap mx SDK](https://napmx.github.io/)를 같은 타입 기반
 |---|---|
 | Flutter / Dart | Flutter 3.24+, Dart 3.5+ (CI: Flutter 3.44.9) |
 | Android | API 21+, compile SDK 36, Java 17; AGP 8.10.1+ / Kotlin 2.1.0+ (권장 2.2.10) |
-| nap mx Android | `admixer-ssp:2.5.0` (공식 BOM `2026.11.01`) |
+| nap mx Android | `admixer-ssp:2.5.1` (공식 BOM `2026.11.02`) |
 | iOS | iOS 13+, Xcode 16+, Swift 5.9 |
 | nap mx iOS | `AdMixerMediation` 2.6.1 + `AdMixer` 1.5.1 |
 
@@ -84,7 +84,7 @@ Android 앱의 `android/app/build.gradle.kts` 예시:
 
 ```kotlin
 dependencies {
-    implementation(platform("io.github.nasmedia-tech:admixer-bom:2026.11.01"))
+    implementation(platform("io.github.nasmedia-tech:admixer-bom:2026.11.02"))
     implementation("io.github.nasmedia-tech:admixer-admanager") // 선택
     // implementation("io.github.nasmedia-tech:admixer-pangle") // 선택
 }
