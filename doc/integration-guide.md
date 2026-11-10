@@ -9,8 +9,8 @@
 | 항목 | 버전 |
 |---|---|
 | Flutter CI | 3.44.9 |
-| Android Core | `admixer-ssp:2.5.0` |
-| Android BOM | `admixer-bom:2026.11.01` |
+| Android Core | `admixer-ssp:2.5.1` |
+| Android BOM | `admixer-bom:2026.11.02` |
 | iOS Mediation | `AdMixerMediation` 2.6.1 |
 | iOS Core | `AdMixer` 1.5.1 |
 
@@ -100,7 +100,7 @@ const rewardedId = String.fromEnvironment('NAP_MX_REWARDED_ID');
 ```kotlin
 dependencies {
     // nap mx 모듈 버전을 공식 검증 조합으로 정렬합니다.
-    implementation(platform("io.github.nasmedia-tech:admixer-bom:2026.11.01"))
+    implementation(platform("io.github.nasmedia-tech:admixer-bom:2026.11.02"))
 
     // 사용하는 네트워크만 남깁니다.
     implementation("io.github.nasmedia-tech:admixer-admanager")       // Google Ad Manager
@@ -242,7 +242,7 @@ AGP 9 조합은 Flutter 앱이 아닌 별도 Android 프로젝트에서 플러�
 ```kotlin
 // android/app/build.gradle.kts
 dependencies {
-    implementation(platform("io.github.nasmedia-tech:admixer-bom:2026.11.01"))
+    implementation(platform("io.github.nasmedia-tech:admixer-bom:2026.11.02"))
     implementation("io.github.nasmedia-tech:admixer-admanager")
 
     // Google SDK 입찰 광고 소스 — play-services-ads 25.2.0 호환 버전
