@@ -38,7 +38,7 @@ void main() {
       if (call.method == 'getSdkInfo') {
         return <String, Object?>{
           'platform': 'test',
-          'pluginVersion': '0.1.10',
+          'pluginVersion': '0.1.11',
           'sdkVersion': '2.5.0',
         };
       }

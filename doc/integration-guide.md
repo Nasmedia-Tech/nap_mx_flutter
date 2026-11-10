@@ -4,7 +4,7 @@
 
 웹 문서는 [nap mx Flutter SDK (Beta) 공식 가이드](https://napmx.github.io/#/flutter/)에 있습니다. 네이티브 SDK 요구사항은 [nap mx 공식 가이드](https://napmx.github.io/)를 따릅니다.
 
-이 문서는 플러그인 `v0.1.10` 기준입니다.
+이 문서는 플러그인 `v0.1.11` 기준입니다.
 
 | 항목 | 버전 |
 |---|---|
@@ -56,7 +56,7 @@ dependencies:
   nap_mx_flutter:
     git:
       url: https://github.com/Nasmedia-Tech/nap_mx_flutter.git
-      ref: v0.1.10 # 릴리스 태그를 지정합니다. main은 쓰지 마세요.
+      ref: v0.1.11 # 릴리스 태그를 지정합니다. main은 쓰지 마세요.
 ```
 
 ```bash
